@@ -1,0 +1,8 @@
+Clock.exe
+RenderIcon.exe
+*.pdb
+preview.png
+exeicon.png
+.vs/
+bin/
+obj/
