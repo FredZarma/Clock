@@ -12,6 +12,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Controls.Primitives;
 using System.Windows.Media.Effects;
 using System.Windows.Shapes;
 using System.Windows.Threading;
@@ -21,14 +22,17 @@ using System.Windows.Threading;
 [assembly: AssemblyProduct("Clock")]
 [assembly: AssemblyCompany("Fred Zarma")]
 [assembly: AssemblyCopyright("Copyright Fred Zarma 2026")]
-[assembly: AssemblyVersion("2.1.0.0")]
-[assembly: AssemblyFileVersion("2.1.0.0")]
+[assembly: AssemblyVersion("2.1.2.0")]
+[assembly: AssemblyFileVersion("2.1.2.0")]
 
 internal static class Program
 {
     [STAThread]
     private static void Main()
     {
+        FixMenuDropAlignment();
+        SystemParameters.StaticPropertyChanged += OnSystemParametersChanged;
+
         bool created;
         Mutex mutex = new Mutex(true, @"Local\DesktopClock.IconWidget", out created);
         if (!created)
@@ -38,6 +42,22 @@ internal static class Program
         app.ShutdownMode = ShutdownMode.OnMainWindowClose;
         app.Run(new ClockWindow());
         GC.KeepAlive(mutex);
+    }
+
+    static void OnSystemParametersChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == "MenuDropAlignment")
+            FixMenuDropAlignment();
+    }
+
+    static void FixMenuDropAlignment()
+    {
+        if (!SystemParameters.MenuDropAlignment)
+            return;
+        FieldInfo field = typeof(SystemParameters).GetField(
+            "_menuDropAlignment", BindingFlags.NonPublic | BindingFlags.Static);
+        if (field != null)
+            field.SetValue(null, false);
     }
 }
 
@@ -251,6 +271,8 @@ internal sealed class ClockWindow : Window
 
         ContextMenuOpening += delegate { ContextMenu = BuildMenu(); };
         _hit.ContextMenuOpening += delegate { _hit.ContextMenu = BuildMenu(); };
+        ContextMenuService.SetPlacement(this, PlacementMode.Custom);
+        ContextMenuService.SetPlacement(_hit, PlacementMode.Custom);
         ContextMenu = BuildMenu();
         _hit.ContextMenu = ContextMenu;
 
@@ -286,6 +308,9 @@ internal sealed class ClockWindow : Window
     ContextMenu BuildMenu()
     {
         ContextMenu menu = new ContextMenu();
+        menu.Placement = PlacementMode.Custom;
+        menu.PlacementTarget = _hit;
+        menu.CustomPopupPlacementCallback = PlaceMainMenu;
         menu.Items.Add(Item("Ouvrir le calendrier", false, false, delegate { OpenCalendar(); }));
         menu.Items.Add(Item("Copier l'heure", false, false, delegate { CopyTime(); }));
         menu.Items.Add(Item("Alarme...", false, false, delegate { OpenAlarm(); }));
@@ -298,6 +323,7 @@ internal sealed class ClockWindow : Window
             int idx = i;
             sizes.Items.Add(Item(SizeNames[i], true, _s.Size == i, delegate { _s.Size = idx; ApplySize(); SaveSettings(); }));
         }
+        PreferSubmenuBeside(sizes);
         menu.Items.Add(sizes);
 
         MenuItem themes = new MenuItem();
@@ -307,6 +333,7 @@ internal sealed class ClockWindow : Window
             int idx = i;
             themes.Items.Add(Item(ThemeNames[i], true, _s.Theme == i, delegate { _s.Theme = idx; ApplyTheme(); TickClock(); SaveSettings(); }));
         }
+        PreferSubmenuBeside(themes);
         menu.Items.Add(themes);
 
         MenuItem display = new MenuItem();
@@ -315,6 +342,9 @@ internal sealed class ClockWindow : Window
         display.Items.Add(Item("Date", true, _s.Date, delegate { _s.Date = !_s.Date; TickClock(); SaveSettings(); }));
         display.Items.Add(Item("Format 24 heures", true, _s.TwentyFour, delegate { _s.TwentyFour = !_s.TwentyFour; TickClock(); SaveSettings(); }));
         display.Items.Add(Item("Carillon des heures", true, _s.Chime, delegate { _s.Chime = !_s.Chime; SaveSettings(); }));
+        PreferSubmenuBeside(display);
+        menu.Items.Add(display);
+
         MenuItem opac = new MenuItem();
         opac.Header = "Opacite";
         int[] pcts = { 100, 80, 60 };
@@ -323,8 +353,8 @@ internal sealed class ClockWindow : Window
             int p = pcts[i];
             opac.Items.Add(Item(p + " %", true, _s.OpacityPct == p, delegate { _s.OpacityPct = p; ApplyOpacity(); SaveSettings(); }));
         }
-        display.Items.Add(opac);
-        menu.Items.Add(display);
+        PreferSubmenuBeside(opac);
+        menu.Items.Add(opac);
 
         MenuItem nom = new MenuItem();
         nom.Header = "Nom";
@@ -335,6 +365,7 @@ internal sealed class ClockWindow : Window
             SaveSettings();
         }));
         nom.Items.Add(Item("Modifier le nom...", false, false, delegate { RenameLabel(); }));
+        PreferSubmenuBeside(nom);
         menu.Items.Add(nom);
 
         menu.Items.Add(new Separator());
@@ -398,6 +429,120 @@ internal sealed class ClockWindow : Window
         mi.IsChecked = isChecked;
         mi.Click += click;
         return mi;
+    }
+
+    static void PreferSubmenuBeside(MenuItem item)
+    {
+        item.SubmenuOpened += OnSubmenuOpened;
+    }
+
+    static void OnSubmenuOpened(object sender, RoutedEventArgs e)
+    {
+        MenuItem item = sender as MenuItem;
+        if (item == null)
+            return;
+        item.ApplyTemplate();
+        Popup popup = null;
+        if (item.Template != null)
+            popup = item.Template.FindName("PART_Popup", item) as Popup;
+        if (popup == null)
+            return;
+
+        popup.Placement = PlacementMode.Custom;
+        popup.PlacementTarget = item;
+        popup.CustomPopupPlacementCallback = delegate(Size popupSize, Size targetSize, Point offset)
+        {
+            return PlaceFlyoutBeside(item, popupSize, targetSize);
+        };
+        popup.HorizontalOffset = 0;
+        popup.VerticalOffset = 0;
+    }
+
+    static CustomPopupPlacement[] PlaceFlyoutBeside(FrameworkElement target, Size popupSize, Size targetSize)
+    {
+        Rect work = WorkAreaFrom(target);
+        Point origin = target.PointToScreen(new Point(0, 0));
+        double dpi = DpiFrom(target);
+        double left = origin.X / dpi;
+        double spaceRight = work.Right - (left + targetSize.Width);
+        double spaceLeft = left - work.Left;
+        bool openRight = spaceRight >= popupSize.Width || spaceRight >= spaceLeft;
+        if (openRight)
+            return new CustomPopupPlacement[]
+            {
+                new CustomPopupPlacement(new Point(targetSize.Width, 0), PopupPrimaryAxis.Vertical)
+            };
+        return new CustomPopupPlacement[]
+        {
+            new CustomPopupPlacement(new Point(-popupSize.Width, 0), PopupPrimaryAxis.Vertical)
+        };
+    }
+
+    CustomPopupPlacement[] PlaceMainMenu(Size popupSize, Size targetSize, Point offset)
+    {
+        const double submenuRoom = 240;
+        Rect work = WorkAreaDip();
+        Point screen = _hit.PointToScreen(new Point(0, 0));
+        double left = screen.X / _dpi;
+        double room = submenuRoom;
+        if (popupSize.Width + room > work.Width)
+            room = Math.Max(0, work.Width - popupSize.Width);
+
+        double desiredLeft = left;
+        if (desiredLeft + popupSize.Width + room > work.Right)
+            desiredLeft = work.Right - popupSize.Width - room;
+        if (desiredLeft < work.Left)
+            desiredLeft = work.Left;
+        double dx = desiredLeft - left;
+
+        return new CustomPopupPlacement[]
+        {
+            new CustomPopupPlacement(new Point(dx, targetSize.Height), PopupPrimaryAxis.Horizontal),
+            new CustomPopupPlacement(new Point(dx, -popupSize.Height), PopupPrimaryAxis.Horizontal)
+        };
+    }
+
+    static double DpiFrom(Visual visual)
+    {
+        PresentationSource src = PresentationSource.FromVisual(visual);
+        if (src != null && src.CompositionTarget != null)
+        {
+            double dpi = src.CompositionTarget.TransformToDevice.M11;
+            if (dpi > 0)
+                return dpi;
+        }
+        return 1.0;
+    }
+
+    static Rect WorkAreaFrom(Visual visual)
+    {
+        PresentationSource src = PresentationSource.FromVisual(visual);
+        IntPtr hwnd = IntPtr.Zero;
+        double dpi = 1.0;
+        if (src != null)
+        {
+            HwndSource hs = src as HwndSource;
+            if (hs != null)
+                hwnd = hs.Handle;
+            if (src.CompositionTarget != null)
+            {
+                dpi = src.CompositionTarget.TransformToDevice.M11;
+                if (dpi <= 0)
+                    dpi = 1.0;
+            }
+        }
+        if (hwnd != IntPtr.Zero)
+        {
+            IntPtr mon = Native.MonitorFromWindow(hwnd, 2);
+            Native.MONITORINFO info = new Native.MONITORINFO();
+            info.cbSize = Marshal.SizeOf(typeof(Native.MONITORINFO));
+            if (mon != IntPtr.Zero && Native.GetMonitorInfo(mon, ref info))
+            {
+                Native.RECT r = info.rcWork;
+                return new Rect(r.Left / dpi, r.Top / dpi, (r.Right - r.Left) / dpi, (r.Bottom - r.Top) / dpi);
+            }
+        }
+        return SystemParameters.WorkArea;
     }
 
     void OnSourceInit(object sender, EventArgs e)
