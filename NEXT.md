@@ -1,20 +1,20 @@
-# Prochaine version — installation et désinstallation
+# Next version — install and uninstall
 
-À ajouter, pas encore implémenté.
+To add, not implemented yet.
 
-## Installation
+## Install
 
-- Créer un sous-répertoire dans Program Files, par ex. `C:\Program Files\Clock\` (ou `C:\Program Files\Fred Zarma\Clock\`).
-- Y copier `Clock.exe` (et l’icône si besoin).
-- Créer un raccourci sur le bureau (nom : Clock).
-- Idéalement aussi : raccourci menu Démarrer, entrée « Programmes et fonctionnalités » pour désinstaller.
+- Create a subdirectory in Program Files, e.g. `C:\Program Files\Clock\` (or `C:\Program Files\Fred Zarma\Clock\`).
+- Copy `Clock.exe` there (and the icon if needed).
+- Create a desktop shortcut named Clock.
+- Ideally also: a Start menu shortcut, and an entry in Apps & features for uninstall.
 
-L’installeur demandera probablement les droits administrateur (écriture dans Program Files).
+The installer will probably need administrator rights (write access to Program Files).
 
-## Désinstallation (propre)
+## Uninstall (clean)
 
-- Supprimer le répertoire d’installation.
-- Supprimer le raccourci du bureau.
-- Supprimer le raccourci du menu Démarrer.
-- Supprimer la clé de désinstallation dans le registre.
-- Ne pas laisser de fichiers orphelins. Les réglages utilisateur (`%AppData%\DesktopClock`) : à proposer (conserver ou tout effacer).
+- Delete the install directory.
+- Delete the desktop shortcut.
+- Delete the Start menu shortcut.
+- Delete the uninstall registry key.
+- Leave no leftover files. User settings (`%AppData%\DesktopClock`): offer to keep them or wipe everything.

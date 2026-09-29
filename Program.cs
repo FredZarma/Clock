@@ -18,7 +18,7 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 
 [assembly: AssemblyTitle("Clock")]
-[assembly: AssemblyDescription("Horloge numerique de bureau")]
+[assembly: AssemblyDescription("Digital desktop clock")]
 [assembly: AssemblyProduct("Clock")]
 [assembly: AssemblyCompany("Fred Zarma")]
 [assembly: AssemblyCopyright("Copyright Fred Zarma 2026")]
