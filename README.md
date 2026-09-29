@@ -4,7 +4,7 @@ Horloge numérique de bureau pour Windows, gratuite.
 
 Petit gadget toujours visible, déplaçable comme une icône, avec affichage LED 7 segments, date, calendrier, alarme et thèmes.
 
-**Copyright Fred Zarma 2026** — [@FredZarma](https://x.com/FredZarma)
+**Copyright Fred Zarma 2026** — zarma@sylm.info
 
 ## Téléchargement
 
@@ -24,13 +24,17 @@ Au premier lancement, Windows SmartScreen peut afficher un avertissement (applic
 | Double-clic | Calendrier |
 | Clic droit | Menu |
 
-Dans le menu : taille, couleur, secondes, date, format 12/24 h, alarme, nom de l’icône (modifier ou masquer), toujours visible, lancer au démarrage, copyright.
+Dans le menu : drapeaux de langue (anglais, mandarin, hindi, espagnol, français, russe, japonais, allemand), calendrier, copier l’heure, taille, couleur, secondes, date, format 12/24 h, alarme, nom de l’icône (modifier ou masquer), toujours visible, lancer au démarrage, copyright (zarma@sylm.info).
 
 ## Compiler
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\Build.ps1
 ```
+
+## Prochaine version
+
+Voir `NEXT.md` : installeur (copie dans Program Files + raccourci bureau) et désinstallation propre.
 
 ## Licence
 

@@ -29,7 +29,7 @@ Remove-Item "$here\RenderIcon.exe" -ErrorAction SilentlyContinue
 $iconArg = @()
 if (Test-Path "$here\clock.ico") { $iconArg = @("/win32icon:$here\clock.ico") }
 
-& $csc /nologo /optimize+ /target:winexe /platform:x64 `
+& $csc /nologo /optimize+ /codepage:65001 /target:winexe /platform:x64 `
   /win32manifest:"$here\app.manifest" `
   @iconArg `
   /r:"$wpf\WindowsBase.dll" `
@@ -43,6 +43,13 @@ if (Test-Path "$here\clock.ico") { $iconArg = @("/win32icon:$here\clock.ico") }
 if ($LASTEXITCODE -ne 0) { throw "Clock compile failed" }
 
 Write-Host "Built $here\Clock.exe"
+
+$dist = Join-Path $here 'dist'
+New-Item -ItemType Directory -Force -Path $dist | Out-Null
+Copy-Item -Force "$here\Clock.exe" (Join-Path $dist 'Clock.exe')
+if (Test-Path "$here\clock.ico") {
+    Copy-Item -Force "$here\clock.ico" (Join-Path $dist 'clock.ico')
+}
 
 $desktop = [Environment]::GetFolderPath('Desktop')
 $deskExe = Join-Path $desktop 'Clock.exe'

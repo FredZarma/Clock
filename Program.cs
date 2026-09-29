@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -22,25 +22,548 @@ using System.Windows.Threading;
 [assembly: AssemblyProduct("Clock")]
 [assembly: AssemblyCompany("Fred Zarma")]
 [assembly: AssemblyCopyright("Copyright Fred Zarma 2026")]
-[assembly: AssemblyVersion("2.1.2.0")]
-[assembly: AssemblyFileVersion("2.1.2.0")]
+[assembly: AssemblyVersion("2.2.3.0")]
+[assembly: AssemblyFileVersion("2.2.3.0")]
+
+internal static class Ui
+{
+    public static readonly string[] Codes = new string[] { "en", "zh", "hi", "es", "fr", "ru", "ja", "de" };
+    static readonly string[] IetfTags = new string[] { "en-US", "zh-CN", "hi-IN", "es-ES", "fr-FR", "ru-RU", "ja-JP", "de-DE" };
+    static readonly string[] Names = new string[] { "English", "中文", "हिन्दी", "Español", "Français", "Русский", "日本語", "Deutsch" };
+    static readonly Dictionary<string, string[]> Map = new Dictionary<string, string[]>(StringComparer.Ordinal);
+
+    static string _code = "en";
+    static CultureInfo _culture = CultureInfo.GetCultureInfo("en-US");
+
+    static Ui()
+    {
+        Add("Open calendar", "打开日历", "कैलेंडर खोलें", "Abrir el calendario", "Ouvrir le calendrier", "Открыть календарь", "カレンダーを開く", "Kalender öffnen");
+        Add("Copy the time", "复制时间", "समय कॉपी करें", "Copiar la hora", "Copier l'heure", "Копировать время", "時刻をコピー", "Uhrzeit kopieren");
+        Add("Alarm...", "闹钟...", "अलार्म...", "Alarma...", "Alarme...", "Будильник...", "アラーム...", "Wecker...");
+        Add("Small", "小", "छोटा", "Pequeña", "Petite", "Маленький", "小", "Klein");
+        Add("Normal", "标准", "सामान्य", "Normal", "Normale", "Обычный", "標準", "Normal");
+        Add("Large", "大", "बड़ा", "Grande", "Grande", "Большой", "大", "Groß");
+        Add("Extra", "特大", "अतिरिक्त", "Extra", "Extra", "Extra", "特大", "Extra");
+        Add("Size", "大小", "आकार", "Tamaño", "Taille", "Размер", "サイズ", "Größe");
+        Add("Green", "绿", "हरा", "Verde", "Vert", "Зелёный", "緑", "Grün");
+        Add("Amber", "琥珀", "अंबर", "Ámbar", "Ambre", "Янтарный", "琥珀", "Bernstein");
+        Add("Red", "红", "लाल", "Rojo", "Rouge", "Красный", "赤", "Rot");
+        Add("Blue", "蓝", "नीला", "Azul", "Bleu", "Синий", "青", "Blau");
+        Add("Cyan", "青", "स्यान", "Cian", "Cyan", "Голубой", "シアン", "Cyan");
+        Add("White", "白", "सफेद", "Blanco", "Blanc", "Белый", "白", "Weiß");
+        Add("Color", "颜色", "रंग", "Color", "Couleur", "Цвет", "色", "Farbe");
+        Add("Display", "显示", "प्रदर्शन", "Visualización", "Affichage", "Отображение", "表示", "Anzeige");
+        Add("Seconds", "秒", "सेकंड", "Segundos", "Secondes", "Секунды", "秒", "Sekunden");
+        Add("Date", "日期", "तारीख", "Fecha", "Date", "Дата", "日付", "Datum");
+        Add("24-hour format", "24小时制", "24 घंटे प्रारूप", "Formato 24 horas", "Format 24 heures", "24-часовой формат", "24時間表示", "24-Stunden-Format");
+        Add("Hour chime", "整点报时", "घंटे की घंटी", "Campanada", "Carillon des heures", "Бой часов", "時報", "Stundenschlag");
+        Add("Opacity", "不透明度", "अपारदर्शिता", "Opacidad", "Opacité", "Непрозрачность", "不透明度", "Deckkraft");
+        Add("Name", "名称", "नाम", "Nombre", "Nom", "Имя", "名前", "Name");
+        Add("Show the name", "显示名称", "नाम दिखाएँ", "Mostrar el nombre", "Afficher le nom", "Показать имя", "名前を表示", "Namen anzeigen");
+        Add("Change the name...", "更改名称...", "नाम बदलें...", "Cambiar el nombre...", "Modifier le nom...", "Изменить имя...", "名前を変更...", "Namen ändern...");
+        Add("Snap to grid", "对齐到网格", "ग्रिड पर संरेखित करें", "Ajustar a la cuadrícula", "Aligner sur la grille", "Привязать к сетке", "グリッドに合わせる", "Am Raster ausrichten");
+        Add("Lock position", "锁定位置", "स्थिति लॉक करें", "Bloquear la posición", "Verrouiller la position", "Зафиксировать положение", "位置を固定", "Position sperren");
+        Add("Always on top", "始终置顶", "हमेशा ऊपर", "Siempre visible", "Toujours visible", "Поверх всех окон", "常に最前面", "Immer im Vordergrund");
+        Add("Run at startup", "开机启动", "स्टार्टअप पर चलाएँ", "Ejecutar al inicio", "Lancer au démarrage", "Запускать при старте", "起動時に実行", "Beim Start ausführen");
+        Add("Windows date and time", "Windows 日期和时间", "Windows दिनांक और समय", "Fecha y hora de Windows", "Date et heure Windows", "Дата и время Windows", "Windows の日付と時刻", "Windows-Datum und -Uhrzeit");
+        Add("Close", "关闭", "बंद करें", "Cerrar", "Fermer", "Закрыть", "閉じる", "Schließen");
+        Add("Calendar", "日历", "कैलेंडर", "Calendario", "Calendrier", "Календарь", "カレンダー", "Kalender");
+        Add("Name under the icon", "图标下的名称", "आइकन के नीचे नाम", "Nombre bajo el icono", "Nom sous l'icône", "Имя под значком", "アイコン下の名前", "Name unter dem Symbol");
+        Add("Cancel", "取消", "रद्द करें", "Cancelar", "Annuler", "Отмена", "キャンセル", "Abbrechen");
+        Add("Alarm", "闹钟", "अलार्म", "Alarma", "Alarme", "Будильник", "アラーム", "Wecker");
+        Add("Enable alarm", "启用闹钟", "अलार्म चालू करें", "Activar alarma", "Activer l'alarme", "Включить будильник", "アラームを有効にする", "Wecker aktivieren");
+        Add("Time (24 h) — every day", "时间（24小时）— 每天", "समय (24 घंटे) — हर दिन", "Hora (24 h) — todos los días", "Heure (24 h) — tous les jours", "Время (24 ч) — каждый день", "時刻（24時間）— 毎日", "Zeit (24 Std.) — täglich");
+        Add("Snooze 5 min", "推迟 5 分钟", "5 मिनट बाद", "Posponer 5 min", "Reporter 5 min", "Отложить 5 мин", "5分後に再通知", "5 Min. zurückstellen");
+        Add("Stop", "停止", "रोकें", "Detener", "Arrêter", "Стоп", "停止", "Stopp");
+    }
+
+    static void Add(string en, string zh, string hi, string es, string fr, string ru, string ja, string de)
+    {
+        Map[en] = new string[] { zh, hi, es, fr, ru, ja, de };
+    }
+
+    public static string Code
+    {
+        get { return _code; }
+    }
+
+    public static bool Fr
+    {
+        get { return _code == "fr"; }
+    }
+
+    public static CultureInfo Culture
+    {
+        get { return _culture; }
+    }
+
+    public static string Ietf
+    {
+        get
+        {
+            int i = IndexOf(_code);
+            return IetfTags[i < 0 ? 0 : i];
+        }
+    }
+
+    public static string LangName(string code)
+    {
+        int i = IndexOf(code);
+        return i < 0 ? code : Names[i];
+    }
+
+    public static FontFamily UiFont
+    {
+        get
+        {
+            return new FontFamily("Segoe UI, Microsoft YaHei UI, Microsoft YaHei, Nirmala UI, Yu Gothic UI, Yu Gothic, Meiryo, Malgun Gothic");
+        }
+    }
+
+    public static void ApplyToThread()
+    {
+        try
+        {
+            Thread.CurrentThread.CurrentCulture = _culture;
+            Thread.CurrentThread.CurrentUICulture = _culture;
+        }
+        catch { }
+    }
+
+    public static string S(string en, string fr)
+    {
+        return T(en);
+    }
+
+    public static string T(string en)
+    {
+        if (en == null)
+            return "";
+        if (_code == "en")
+            return en;
+        string[] row;
+        if (!Map.TryGetValue(en, out row) || row == null)
+            return en;
+        int i = IndexOf(_code) - 1;
+        if (i < 0 || i >= row.Length || string.IsNullOrEmpty(row[i]))
+            return en;
+        return row[i];
+    }
+
+    public static void Init()
+    {
+        _code = "en";
+        _culture = MakeCulture("en");
+        try
+        {
+            string path = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "ValheimAdminHelper",
+                "settings.json");
+            if (!File.Exists(path))
+                return;
+            string text = File.ReadAllText(path);
+            int i = text.IndexOf("\"Language\"");
+            if (i < 0)
+                return;
+            int colon = text.IndexOf(':', i + 10);
+            if (colon < 0 || colon > i + 40)
+                return;
+            int q1 = text.IndexOf('"', colon + 1);
+            if (q1 < 0 || q1 > colon + 8)
+                return;
+            int q2 = text.IndexOf('"', q1 + 1);
+            if (q2 < 0)
+                return;
+            string v = text.Substring(q1 + 1, q2 - q1 - 1);
+            if (Normalize(v) == "fr")
+            {
+                _code = "fr";
+                _culture = MakeCulture("fr");
+            }
+        }
+        catch { }
+        ApplyToThread();
+    }
+
+    public static bool Set(string code)
+    {
+        string n = Normalize(code);
+        if (n == null)
+            return false;
+        if (n == _code)
+            return false;
+        _code = n;
+        _culture = MakeCulture(n);
+        ApplyToThread();
+        return true;
+    }
+
+    public static void ApplySaved(string code)
+    {
+        string n = Normalize(code);
+        if (n == null)
+            return;
+        _code = n;
+        _culture = MakeCulture(n);
+        ApplyToThread();
+    }
+
+    static string Normalize(string code)
+    {
+        if (code == null)
+            return null;
+        string s = code.Trim().ToLowerInvariant();
+        if (s == "en" || s == "eng" || s == "english" || s.StartsWith("en-"))
+            return "en";
+        if (s == "zh" || s == "cn" || s == "zh-cn" || s == "zh-hans" || s == "mandarin" || s == "chinese")
+            return "zh";
+        if (s == "hi" || s == "hindi" || s.StartsWith("hi-"))
+            return "hi";
+        if (s == "es" || s == "spanish" || s == "espanol" || s == "español" || s.StartsWith("es-"))
+            return "es";
+        if (s == "fr" || s == "french" || s == "francais" || s == "français" || s.StartsWith("fr-"))
+            return "fr";
+        if (s == "ru" || s == "russian" || s.StartsWith("ru-"))
+            return "ru";
+        if (s == "ja" || s == "jp" || s == "japanese" || s.StartsWith("ja-"))
+            return "ja";
+        if (s == "de" || s == "german" || s == "deutsch" || s.StartsWith("de-"))
+            return "de";
+        return null;
+    }
+
+    static int IndexOf(string code)
+    {
+        for (int i = 0; i < Codes.Length; i++)
+        {
+            if (Codes[i] == code)
+                return i;
+        }
+        return -1;
+    }
+
+    static CultureInfo MakeCulture(string code)
+    {
+        int i = IndexOf(code);
+        string tag = IetfTags[i < 0 ? 0 : i];
+        try
+        {
+            return CultureInfo.GetCultureInfo(tag);
+        }
+        catch
+        {
+            return CultureInfo.GetCultureInfo("en-US");
+        }
+    }
+}
+
+internal sealed class FlagDraw : FrameworkElement
+{
+    readonly string _code;
+    readonly bool _on;
+
+    public FlagDraw(string code, bool selected)
+    {
+        _code = code;
+        _on = selected;
+        Width = 24;
+        Height = 16;
+        IsHitTestVisible = true;
+        SnapsToDevicePixels = true;
+    }
+
+    public string Code
+    {
+        get { return _code; }
+    }
+
+    protected override HitTestResult HitTestCore(PointHitTestParameters hitTestParameters)
+    {
+        if (hitTestParameters == null)
+            return null;
+        Point p = hitTestParameters.HitPoint;
+        if (p.X < 0 || p.Y < 0 || p.X > ActualWidth || p.Y > ActualHeight)
+            return null;
+        return new PointHitTestResult(this, p);
+    }
+
+    protected override void OnRender(DrawingContext dc)
+    {
+        double x = 2;
+        double y = 2;
+        double w = 20;
+        double h = 12;
+        DrawFlag(dc, _code, new Rect(x, y, w, h));
+        Pen edge = new Pen(_on ? Brushes.White : new SolidColorBrush(Color.FromArgb(90, 255, 255, 255)), 1);
+        dc.DrawRectangle(null, edge, new Rect(_on ? 0.5 : x - 0.5, _on ? 0.5 : y - 0.5, _on ? 23 : w + 1, _on ? 15 : h + 1));
+    }
+
+    static void DrawFlag(DrawingContext dc, string code, Rect r)
+    {
+        if (code == "en")
+            DrawGb(dc, r);
+        else if (code == "zh")
+        {
+            dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(0xDE, 0x29, 0x10)), null, r);
+            dc.DrawEllipse(new SolidColorBrush(Color.FromRgb(0xFF, 0xDE, 0x00)), null,
+                new Point(r.X + r.Width * 0.28, r.Y + r.Height * 0.38), r.Height * 0.18, r.Height * 0.18);
+        }
+        else if (code == "hi")
+        {
+            dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(0xFF, 0x99, 0x33)), null, new Rect(r.X, r.Y, r.Width, r.Height / 3));
+            dc.DrawRectangle(Brushes.White, null, new Rect(r.X, r.Y + r.Height / 3, r.Width, r.Height / 3));
+            dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(0x13, 0x88, 0x08)), null, new Rect(r.X, r.Y + 2 * r.Height / 3, r.Width, r.Height / 3));
+            dc.DrawEllipse(new SolidColorBrush(Color.FromRgb(0x00, 0x00, 0x80)), null,
+                new Point(r.X + r.Width / 2, r.Y + r.Height / 2), r.Height * 0.14, r.Height * 0.14);
+        }
+        else if (code == "es")
+        {
+            dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(0xAA, 0x15, 0x1B)), null, r);
+            dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(0xF1, 0xBF, 0x00)), null,
+                new Rect(r.X, r.Y + r.Height * 0.25, r.Width, r.Height * 0.5));
+        }
+        else if (code == "fr")
+        {
+            dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(0x00, 0x23, 0x95)), null, new Rect(r.X, r.Y, r.Width / 3, r.Height));
+            dc.DrawRectangle(Brushes.White, null, new Rect(r.X + r.Width / 3, r.Y, r.Width / 3, r.Height));
+            dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(0xED, 0x29, 0x39)), null, new Rect(r.X + 2 * r.Width / 3, r.Y, r.Width / 3, r.Height));
+        }
+        else if (code == "ru")
+        {
+            dc.DrawRectangle(Brushes.White, null, new Rect(r.X, r.Y, r.Width, r.Height / 3));
+            dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(0x00, 0x39, 0xA6)), null, new Rect(r.X, r.Y + r.Height / 3, r.Width, r.Height / 3));
+            dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(0xD5, 0x2B, 0x1E)), null, new Rect(r.X, r.Y + 2 * r.Height / 3, r.Width, r.Height / 3));
+        }
+        else if (code == "ja")
+        {
+            dc.DrawRectangle(Brushes.White, null, r);
+            dc.DrawEllipse(new SolidColorBrush(Color.FromRgb(0xBC, 0x00, 0x2D)), null,
+                new Point(r.X + r.Width / 2, r.Y + r.Height / 2), r.Height * 0.28, r.Height * 0.28);
+        }
+        else if (code == "de")
+        {
+            dc.DrawRectangle(Brushes.Black, null, new Rect(r.X, r.Y, r.Width, r.Height / 3));
+            dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(0xDD, 0x00, 0x00)), null, new Rect(r.X, r.Y + r.Height / 3, r.Width, r.Height / 3));
+            dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(0xFF, 0xCE, 0x00)), null, new Rect(r.X, r.Y + 2 * r.Height / 3, r.Width, r.Height / 3));
+        }
+    }
+
+    static void DrawGb(DrawingContext dc, Rect r)
+    {
+        dc.PushClip(new RectangleGeometry(r));
+        dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(0x01, 0x21, 0x69)), null, r);
+        Brush red = new SolidColorBrush(Color.FromRgb(0xC8, 0x10, 0x2E));
+        double cx = r.X + r.Width / 2;
+        double cy = r.Y + r.Height / 2;
+        Pen whiteSaltire = new Pen(Brushes.White, r.Height * 0.28);
+        dc.DrawLine(whiteSaltire, new Point(r.X, r.Y), new Point(r.X + r.Width, r.Y + r.Height));
+        dc.DrawLine(whiteSaltire, new Point(r.X + r.Width, r.Y), new Point(r.X, r.Y + r.Height));
+        Pen redSaltire = new Pen(red, r.Height * 0.10);
+        dc.DrawLine(redSaltire, new Point(r.X, r.Y), new Point(r.X + r.Width, r.Y + r.Height));
+        dc.DrawLine(redSaltire, new Point(r.X + r.Width, r.Y), new Point(r.X, r.Y + r.Height));
+        Pen whiteCross = new Pen(Brushes.White, r.Height * 0.42);
+        dc.DrawLine(whiteCross, new Point(cx, r.Y), new Point(cx, r.Y + r.Height));
+        dc.DrawLine(whiteCross, new Point(r.X, cy), new Point(r.X + r.Width, cy));
+        Pen redCross = new Pen(red, r.Height * 0.22);
+        dc.DrawLine(redCross, new Point(cx, r.Y), new Point(cx, r.Y + r.Height));
+        dc.DrawLine(redCross, new Point(r.X, cy), new Point(r.X + r.Width, cy));
+        dc.Pop();
+    }
+}
+
+internal static class ClockIpc
+{
+    const int WmCopyData = 0x004A;
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct COPYDATASTRUCT
+    {
+        public IntPtr dwData;
+        public int cbData;
+        public IntPtr lpData;
+    }
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    static extern IntPtr FindWindow(string cls, string title);
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    static extern IntPtr SendMessage(IntPtr hwnd, int msg, IntPtr wParam, ref COPYDATASTRUCT data);
+
+    public static void Send(int kind, int x, int y)
+    {
+        IntPtr hwnd = IntPtr.Zero;
+        for (int i = 0; i < 20 && hwnd == IntPtr.Zero; i++)
+        {
+            hwnd = FindWindow(null, "VAH Clock");
+            if (hwnd == IntPtr.Zero)
+                Thread.Sleep(50);
+        }
+        if (hwnd == IntPtr.Zero)
+            return;
+        int[] payload = new int[] { x, y };
+        GCHandle pin = GCHandle.Alloc(payload, GCHandleType.Pinned);
+        try
+        {
+            COPYDATASTRUCT cds = new COPYDATASTRUCT();
+            cds.dwData = new IntPtr(kind);
+            cds.cbData = 8;
+            cds.lpData = pin.AddrOfPinnedObject();
+            SendMessage(hwnd, WmCopyData, IntPtr.Zero, ref cds);
+        }
+        finally
+        {
+            pin.Free();
+        }
+    }
+}
+
+internal static class MenuDismiss
+{
+    delegate IntPtr HookProc(int code, IntPtr wParam, IntPtr lParam);
+    delegate bool EnumProc(IntPtr hwnd, IntPtr param);
+
+    const int WhMouseLl = 14;
+
+    static HookProc _proc;
+    static IntPtr _hook;
+    static IntPtr _clock;
+    static Action _close;
+
+    [DllImport("user32.dll", SetLastError = true)]
+    static extern IntPtr SetWindowsHookEx(int idHook, HookProc lpfn, IntPtr hMod, uint threadId);
+    [DllImport("user32.dll")]
+    static extern bool UnhookWindowsHookEx(IntPtr hook);
+    [DllImport("user32.dll")]
+    static extern IntPtr CallNextHookEx(IntPtr hook, int code, IntPtr wParam, IntPtr lParam);
+    [DllImport("user32.dll")]
+    static extern bool EnumWindows(EnumProc callback, IntPtr param);
+    [DllImport("user32.dll")]
+    static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint pid);
+    [DllImport("user32.dll")]
+    static extern bool IsWindowVisible(IntPtr hwnd);
+    [DllImport("user32.dll")]
+    static extern bool GetWindowRect(IntPtr hwnd, out RECT rect);
+
+    struct RECT
+    {
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
+    }
+
+    public static void Track(IntPtr clockHwnd, Action close)
+    {
+        Stop();
+        _clock = clockHwnd;
+        _close = close;
+        _proc = OnHook;
+        _hook = SetWindowsHookEx(WhMouseLl, _proc, IntPtr.Zero, 0);
+    }
+
+    public static void Stop()
+    {
+        _close = null;
+        if (_hook != IntPtr.Zero)
+        {
+            UnhookWindowsHookEx(_hook);
+            _hook = IntPtr.Zero;
+        }
+    }
+
+    static IntPtr OnHook(int code, IntPtr wParam, IntPtr lParam)
+    {
+        if (code >= 0 && _close != null && lParam != IntPtr.Zero)
+        {
+            int msg = wParam.ToInt32();
+            if (msg == 0x0201 || msg == 0x0204 || msg == 0x0207 || msg == 0x00A1 || msg == 0x00A4)
+            {
+                int x = Marshal.ReadInt32(lParam, 0);
+                int y = Marshal.ReadInt32(lParam, 4);
+                if (!OverMenu(x, y))
+                {
+                    Action close = _close;
+                    _close = null;
+                    if (close != null && Application.Current != null)
+                        Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Send, close);
+                }
+            }
+        }
+        return CallNextHookEx(_hook, code, wParam, lParam);
+    }
+
+    static bool OverMenu(int x, int y)
+    {
+        bool hit = false;
+        uint self = (uint)Process.GetCurrentProcess().Id;
+        EnumWindows(delegate(IntPtr hwnd, IntPtr param)
+        {
+            if (hwnd == _clock)
+                return true;
+            uint pid;
+            GetWindowThreadProcessId(hwnd, out pid);
+            if (pid != self || !IsWindowVisible(hwnd))
+                return true;
+            RECT rect;
+            if (!GetWindowRect(hwnd, out rect))
+                return true;
+            if (rect.Right - rect.Left < 8 || rect.Bottom - rect.Top < 8)
+                return true;
+            if (x >= rect.Left && x < rect.Right && y >= rect.Top && y < rect.Bottom)
+                hit = true;
+            return true;
+        }, IntPtr.Zero);
+        return hit;
+    }
+}
 
 internal static class Program
 {
     [STAThread]
-    private static void Main()
+    private static void Main(string[] args)
     {
         FixMenuDropAlignment();
         SystemParameters.StaticPropertyChanged += OnSystemParametersChanged;
+        Ui.Init();
 
+        bool vah = false;
+        bool reveal = false;
+        bool menu = false;
+        int menuX = 0;
+        int menuY = 0;
+        if (args != null)
+        {
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (args[i] == "--vah")
+                    vah = true;
+                else if (args[i] == "--reveal")
+                    reveal = true;
+                else if (args[i] == "--menu" && i + 2 < args.Length)
+                {
+                    menu = true;
+                    int.TryParse(args[i + 1], NumberStyles.Integer, CultureInfo.InvariantCulture, out menuX);
+                    int.TryParse(args[i + 2], NumberStyles.Integer, CultureInfo.InvariantCulture, out menuY);
+                    i += 2;
+                }
+            }
+        }
+        string mutexName = vah ? @"Local\ValheimAdminHelper.Clock" : @"Local\DesktopClock.IconWidget";
         bool created;
-        Mutex mutex = new Mutex(true, @"Local\DesktopClock.IconWidget", out created);
+        Mutex mutex = new Mutex(true, mutexName, out created);
         if (!created)
+        {
+            if (vah && menu)
+                ClockIpc.Send(1, menuX, menuY);
+            else if (vah && reveal)
+                ClockIpc.Send(2, 0, 0);
             return;
+        }
 
         Application app = new Application();
         app.ShutdownMode = ShutdownMode.OnMainWindowClose;
-        app.Run(new ClockWindow());
+        app.Run(new ClockWindow(vah, vah && menu, menuX, menuY));
         GC.KeepAlive(mutex);
     }
 
@@ -94,11 +617,8 @@ internal sealed class ClockWindow : Window
     const uint MonitorDefaultToNearest = 2;
 
     static readonly IntPtr HwndTopmost = new IntPtr(-1);
-    static readonly CultureInfo Fr = new CultureInfo("fr-FR");
     static readonly double[] FaceW = { 76, 168, 224, 292 };
     static readonly double[] FaceH = { 54, 86, 116, 156 };
-    static readonly string[] SizeNames = { "Petite", "Normale", "Grande", "Extra" };
-    static readonly string[] ThemeNames = { "Vert", "Ambre", "Rouge", "Bleu", "Cyan", "Blanc" };
     static readonly Color[] ThemeLed =
     {
         Color.FromRgb(0x3D, 0xFF, 0x8A),
@@ -144,6 +664,12 @@ internal sealed class ClockWindow : Window
     readonly string _settingsPath;
     readonly string _exePath;
     readonly string _startupLnk;
+    readonly bool _vah;
+    readonly int _menuX;
+    readonly int _menuY;
+    bool _menuHost;
+    int _menuEpoch;
+    bool _holdHost;
     readonly SolidColorBrush _faceBrush = new SolidColorBrush();
     readonly SolidColorBrush _bezelBrush = new SolidColorBrush();
     readonly SolidColorBrush _ledBrush = new SolidColorBrush();
@@ -160,20 +686,36 @@ internal sealed class ClockWindow : Window
     CalendarPopup _cal;
     AlarmAlert _alert;
 
-    public ClockWindow()
+    public ClockWindow(bool vah, bool menuHost, int menuX, int menuY)
     {
+        _vah = vah;
+        _menuHost = menuHost;
+        _menuX = menuX;
+        _menuY = menuY;
         _exePath = Assembly.GetExecutingAssembly().Location;
-        _settingsPath = System.IO.Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "DesktopClock",
-            "settings.txt");
-        _startupLnk = System.IO.Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.Startup),
-            "Clock.lnk");
+        string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        string startup = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
+        if (vah)
+        {
+            _settingsPath = System.IO.Path.Combine(appData, "ValheimAdminHelper", "clock.txt");
+            _startupLnk = System.IO.Path.Combine(startup, "VAH Clock.lnk");
+            _s.Size = 1;
+            _s.Theme = 0;
+            _s.TwentyFour = true;
+            _s.Snap = true;
+            _s.Topmost = true;
+            _s.OpacityPct = 60;
+            _s.ShowLabel = false;
+        }
+        else
+        {
+            _settingsPath = System.IO.Path.Combine(appData, "DesktopClock", "settings.txt");
+            _startupLnk = System.IO.Path.Combine(startup, "Clock.lnk");
+        }
 
         LoadSettings();
 
-        Title = "Clock";
+        Title = vah ? "VAH Clock" : "Clock";
         WindowStyle = WindowStyle.None;
         AllowsTransparency = true;
         Background = Brushes.Transparent;
@@ -191,8 +733,11 @@ internal sealed class ClockWindow : Window
         _led.MinHeight = 24;
         _led.Margin = new Thickness(8, 2, 8, 0);
 
+        Language = System.Windows.Markup.XmlLanguage.GetLanguage(Ui.Ietf);
+
         _date = new TextBlock();
-        _date.FontFamily = new FontFamily("Segoe UI");
+        _date.FontFamily = Ui.UiFont;
+        _date.Language = Language;
         _date.FontSize = 11;
         _date.HorizontalAlignment = HorizontalAlignment.Center;
         _date.TextAlignment = TextAlignment.Center;
@@ -200,7 +745,7 @@ internal sealed class ClockWindow : Window
         TextOptions.SetTextFormattingMode(_date, TextFormattingMode.Display);
 
         _ampm = new TextBlock();
-        _ampm.FontFamily = new FontFamily("Segoe UI Semibold, Segoe UI");
+        _ampm.FontFamily = new FontFamily("Segoe UI Semibold, Segoe UI, Microsoft YaHei UI, Nirmala UI, Yu Gothic UI");
         _ampm.FontSize = 9;
         _ampm.HorizontalAlignment = HorizontalAlignment.Right;
         _ampm.Margin = new Thickness(0, 3, 8, 0);
@@ -303,6 +848,13 @@ internal sealed class ClockWindow : Window
         ApplyOpacity();
         ApplyLabel();
         TickClock();
+        if (_menuHost)
+        {
+            Left = -20000;
+            Top = -20000;
+            Topmost = false;
+            IsHitTestVisible = false;
+        }
     }
 
     ContextMenu BuildMenu()
@@ -311,42 +863,103 @@ internal sealed class ClockWindow : Window
         menu.Placement = PlacementMode.Custom;
         menu.PlacementTarget = _hit;
         menu.CustomPopupPlacementCallback = PlaceMainMenu;
-        menu.Items.Add(Item("Ouvrir le calendrier", false, false, delegate { OpenCalendar(); }));
-        menu.Items.Add(Item("Copier l'heure", false, false, delegate { CopyTime(); }));
-        menu.Items.Add(Item("Alarme...", false, false, delegate { OpenAlarm(); }));
+        FillMenu(menu);
+        menu.Opened += OnFlagsMenuOpened;
+        return menu;
+    }
+
+    void OnFlagsMenuOpened(object sender, RoutedEventArgs e)
+    {
+        ContextMenu menu = sender as ContextMenu;
+        if (menu == null)
+            return;
+        MenuItem wrap = menu.ItemContainerGenerator.ContainerFromIndex(0) as MenuItem;
+        if (wrap == null)
+            return;
+        wrap.StaysOpenOnClick = true;
+        wrap.Focusable = false;
+        wrap.Padding = new Thickness(4, 2, 4, 2);
+    }
+
+    void FillMenu(ContextMenu menu)
+    {
+        menu.Items.Clear();
+        menu.FontFamily = Ui.UiFont;
+        menu.Language = System.Windows.Markup.XmlLanguage.GetLanguage(Ui.Ietf);
+
+        Menu bar = new Menu();
+        bar.Background = Brushes.Transparent;
+        bar.BorderThickness = new Thickness(0);
+        bar.Padding = new Thickness(0);
+        bar.IsMainMenu = false;
+        FrameworkElementFactory sp = new FrameworkElementFactory(typeof(StackPanel));
+        sp.SetValue(StackPanel.OrientationProperty, Orientation.Horizontal);
+        bar.ItemsPanel = new ItemsPanelTemplate(sp);
+        for (int i = 0; i < Ui.Codes.Length; i++)
+        {
+            string code = Ui.Codes[i];
+            MenuItem flag = new MenuItem();
+            flag.StaysOpenOnClick = true;
+            flag.Tag = code;
+            flag.ToolTip = Ui.LangName(code);
+            flag.Padding = new Thickness(3, 1, 3, 1);
+            flag.Header = new FlagDraw(code, Ui.Code == code);
+            flag.Click += OnLangMenuClick;
+            bar.Items.Add(flag);
+        }
+        bar.AddHandler(MenuItem.ClickEvent, new RoutedEventHandler(OnLangMenuClick), true);
+        menu.Items.Add(bar);
+
+        menu.Items.Add(Item(Ui.S("Open calendar", "Ouvrir le calendrier"), false, false, delegate { OpenCalendar(); }));
+        menu.Items.Add(Item(Ui.S("Copy the time", "Copier l'heure"), false, false, delegate { CopyTime(); }));
+        menu.Items.Add(Item(Ui.S("Alarm...", "Alarme..."), false, false, delegate { OpenAlarm(); }));
         menu.Items.Add(new Separator());
 
+        string[] sizeNames = {
+            Ui.S("Small", "Petite"),
+            Ui.S("Normal", "Normale"),
+            Ui.S("Large", "Grande"),
+            Ui.S("Extra", "Extra")
+        };
         MenuItem sizes = new MenuItem();
-        sizes.Header = "Taille";
-        for (int i = 0; i < SizeNames.Length; i++)
+        sizes.Header = Ui.S("Size", "Taille");
+        for (int i = 0; i < sizeNames.Length; i++)
         {
             int idx = i;
-            sizes.Items.Add(Item(SizeNames[i], true, _s.Size == i, delegate { _s.Size = idx; ApplySize(); SaveSettings(); }));
+            sizes.Items.Add(Item(sizeNames[i], true, _s.Size == i, delegate { _s.Size = idx; ApplySize(); SaveSettings(); }));
         }
         PreferSubmenuBeside(sizes);
         menu.Items.Add(sizes);
 
+        string[] themeNames = {
+            Ui.S("Green", "Vert"),
+            Ui.S("Amber", "Ambre"),
+            Ui.S("Red", "Rouge"),
+            Ui.S("Blue", "Bleu"),
+            Ui.S("Cyan", "Cyan"),
+            Ui.S("White", "Blanc")
+        };
         MenuItem themes = new MenuItem();
-        themes.Header = "Couleur";
-        for (int i = 0; i < ThemeNames.Length; i++)
+        themes.Header = Ui.S("Color", "Couleur");
+        for (int i = 0; i < themeNames.Length; i++)
         {
             int idx = i;
-            themes.Items.Add(Item(ThemeNames[i], true, _s.Theme == i, delegate { _s.Theme = idx; ApplyTheme(); TickClock(); SaveSettings(); }));
+            themes.Items.Add(Item(themeNames[i], true, _s.Theme == i, delegate { _s.Theme = idx; ApplyTheme(); TickClock(); SaveSettings(); }));
         }
         PreferSubmenuBeside(themes);
         menu.Items.Add(themes);
 
         MenuItem display = new MenuItem();
-        display.Header = "Affichage";
-        display.Items.Add(Item("Secondes", true, _s.Seconds, delegate { _s.Seconds = !_s.Seconds; TickClock(); SaveSettings(); }));
-        display.Items.Add(Item("Date", true, _s.Date, delegate { _s.Date = !_s.Date; TickClock(); SaveSettings(); }));
-        display.Items.Add(Item("Format 24 heures", true, _s.TwentyFour, delegate { _s.TwentyFour = !_s.TwentyFour; TickClock(); SaveSettings(); }));
-        display.Items.Add(Item("Carillon des heures", true, _s.Chime, delegate { _s.Chime = !_s.Chime; SaveSettings(); }));
+        display.Header = Ui.S("Display", "Affichage");
+        display.Items.Add(Item(Ui.S("Seconds", "Secondes"), true, _s.Seconds, delegate { _s.Seconds = !_s.Seconds; TickClock(); SaveSettings(); }));
+        display.Items.Add(Item(Ui.S("Date", "Date"), true, _s.Date, delegate { _s.Date = !_s.Date; TickClock(); SaveSettings(); }));
+        display.Items.Add(Item(Ui.S("24-hour format", "Format 24 heures"), true, _s.TwentyFour, delegate { _s.TwentyFour = !_s.TwentyFour; TickClock(); SaveSettings(); }));
+        display.Items.Add(Item(Ui.S("Hour chime", "Carillon des heures"), true, _s.Chime, delegate { _s.Chime = !_s.Chime; SaveSettings(); }));
         PreferSubmenuBeside(display);
         menu.Items.Add(display);
 
         MenuItem opac = new MenuItem();
-        opac.Header = "Opacite";
+        opac.Header = Ui.S("Opacity", "Opacite");
         int[] pcts = { 100, 80, 60 };
         for (int i = 0; i < pcts.Length; i++)
         {
@@ -357,33 +970,36 @@ internal sealed class ClockWindow : Window
         menu.Items.Add(opac);
 
         MenuItem nom = new MenuItem();
-        nom.Header = "Nom";
-        nom.Items.Add(Item("Afficher le nom", true, _s.ShowLabel, delegate
+        nom.Header = Ui.S("Name", "Nom");
+        nom.Items.Add(Item(Ui.S("Show the name", "Afficher le nom"), true, _s.ShowLabel, delegate
         {
             _s.ShowLabel = !_s.ShowLabel;
             ApplyLabel();
             SaveSettings();
         }));
-        nom.Items.Add(Item("Modifier le nom...", false, false, delegate { RenameLabel(); }));
+        nom.Items.Add(Item(Ui.S("Change the name...", "Modifier le nom..."), false, false, delegate { RenameLabel(); }));
         PreferSubmenuBeside(nom);
         menu.Items.Add(nom);
 
         menu.Items.Add(new Separator());
-        menu.Items.Add(Item("Aligner sur la grille", true, _s.Snap, delegate
+        menu.Items.Add(Item(Ui.S("Snap to grid", "Aligner sur la grille"), true, _s.Snap, delegate
         {
             _s.Snap = !_s.Snap;
-            if (_s.Snap) SnapToGrid();
+            if (_s.Snap && !_menuHost) SnapToGrid();
             SaveSettings();
         }));
-        menu.Items.Add(Item("Verrouiller la position", true, _s.Locked, delegate { _s.Locked = !_s.Locked; SaveSettings(); }));
-        menu.Items.Add(Item("Toujours visible", true, _s.Topmost, delegate
+        menu.Items.Add(Item(Ui.S("Lock position", "Verrouiller la position"), true, _s.Locked, delegate { _s.Locked = !_s.Locked; SaveSettings(); }));
+        menu.Items.Add(Item(Ui.S("Always on top", "Toujours visible"), true, _s.Topmost, delegate
         {
             _s.Topmost = !_s.Topmost;
-            Topmost = _s.Topmost;
-            ReassertTopmost();
+            if (!_menuHost)
+            {
+                Topmost = _s.Topmost;
+                ReassertTopmost();
+            }
             SaveSettings();
         }));
-        menu.Items.Add(Item("Lancer au demarrage", true, File.Exists(_startupLnk), delegate
+        menu.Items.Add(Item(Ui.S("Run at startup", "Lancer au demarrage"), true, File.Exists(_startupLnk), delegate
         {
             if (File.Exists(_startupLnk))
             {
@@ -393,19 +1009,81 @@ internal sealed class ClockWindow : Window
             else
                 CreateStartupShortcut();
         }));
-        menu.Items.Add(Item("Date et heure Windows", false, false, delegate
+        menu.Items.Add(Item(Ui.S("Windows date and time", "Date et heure Windows"), false, false, delegate
         {
             try { Process.Start("ms-settings:dateandtime"); }
             catch { }
         }));
         menu.Items.Add(new Separator());
-        menu.Items.Add(Item("© Fred Zarma 2026  (@FredZarma)", false, false, delegate
+        menu.Items.Add(Item("© Fred Zarma 2026  (zarma@sylm.info)", false, false, delegate
         {
-            try { Process.Start("https://x.com/FredZarma"); }
+            try { Process.Start("mailto:zarma@sylm.info"); }
             catch { }
         }));
-        menu.Items.Add(Item("Fermer", false, false, delegate { Close(); }));
-        return menu;
+        menu.Items.Add(Item(Ui.S("Close", "Fermer"), false, false, delegate { Close(); }));
+    }
+
+    void OnLangMenuClick(object sender, RoutedEventArgs e)
+    {
+        string code = null;
+        MenuItem mi = sender as MenuItem;
+        if (mi != null)
+            code = mi.Tag as string;
+        if (code == null)
+        {
+            FrameworkElement fe = e.OriginalSource as FrameworkElement;
+            while (fe != null && code == null)
+            {
+                code = fe.Tag as string;
+                FlagDraw draw = fe as FlagDraw;
+                if (draw != null)
+                    code = draw.Code;
+                fe = VisualTreeHelper.GetParent(fe) as FrameworkElement;
+            }
+        }
+        if (code == null)
+            return;
+        e.Handled = true;
+        Dispatcher.BeginInvoke(new Action(delegate { ApplyLanguage(code); }));
+    }
+
+    void ApplyUiLanguage()
+    {
+        System.Windows.Markup.XmlLanguage lang = System.Windows.Markup.XmlLanguage.GetLanguage(Ui.Ietf);
+        Language = lang;
+        _date.Language = lang;
+        _date.FontFamily = Ui.UiFont;
+        TickClock();
+    }
+
+    void ApplyLanguage(string code)
+    {
+        if (!Ui.Set(code))
+            return;
+        SaveSettings();
+        ApplyUiLanguage();
+        RelocalizeCalendar();
+        if (ContextMenu != null)
+            FillMenu(ContextMenu);
+        if (_hit.ContextMenu != null && _hit.ContextMenu != ContextMenu)
+            FillMenu(_hit.ContextMenu);
+    }
+
+    void RelocalizeCalendar()
+    {
+        if (_cal == null)
+            return;
+        _holdHost = true;
+        try
+        {
+            try { _cal.Close(); }
+            catch { }
+            OpenCalendar();
+        }
+        finally
+        {
+            _holdHost = false;
+        }
     }
 
     static TextBlock IconLabel(string text, Brush color)
@@ -555,8 +1233,19 @@ internal sealed class ClockWindow : Window
 
         IntPtr ex = Native.GetWindowLongPtr(_hwnd, GwlExstyle);
         Native.SetWindowLongPtr(_hwnd, GwlExstyle, new IntPtr(ex.ToInt64() | WsExToolwindow));
+        source.AddHook(WndProc);
 
         ApplySize();
+
+        if (_menuHost)
+        {
+            Left = -20000;
+            Top = -20000;
+            Topmost = false;
+            _clockTimer.Start();
+            Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, new Action(delegate { OpenHostedMenu(_menuX, _menuY); }));
+            return;
+        }
 
         if (_hasPos)
             ClampToWorkArea();
@@ -572,15 +1261,109 @@ internal sealed class ClockWindow : Window
         ReassertTopmost();
     }
 
+    IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (msg != 0x004A)
+            return IntPtr.Zero;
+        ClockIpc.COPYDATASTRUCT cds = (ClockIpc.COPYDATASTRUCT)Marshal.PtrToStructure(lParam, typeof(ClockIpc.COPYDATASTRUCT));
+        int kind = cds.dwData.ToInt32();
+        int x = 0;
+        int y = 0;
+        if (cds.cbData >= 8 && cds.lpData != IntPtr.Zero)
+        {
+            x = Marshal.ReadInt32(cds.lpData, 0);
+            y = Marshal.ReadInt32(cds.lpData, 4);
+        }
+        if (kind == 1)
+        {
+            int px = x;
+            int py = y;
+            Dispatcher.BeginInvoke(new Action(delegate { OpenHostedMenu(px, py); }));
+        }
+        else if (kind == 2)
+            Dispatcher.BeginInvoke(new Action(delegate { Reveal(); }));
+        handled = true;
+        return IntPtr.Zero;
+    }
+
+    void OpenHostedMenu(int x, int y)
+    {
+        _menuEpoch++;
+        int epoch = _menuEpoch;
+        ContextMenu menu = BuildMenu();
+        menu.Placement = PlacementMode.Absolute;
+        menu.CustomPopupPlacementCallback = null;
+        menu.PlacementTarget = this;
+        menu.HorizontalOffset = x / _dpi;
+        menu.VerticalOffset = y / _dpi;
+        menu.StaysOpen = false;
+        menu.Closed += delegate
+        {
+            MenuDismiss.Stop();
+            int mine = epoch;
+            Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, new Action(delegate { MaybeCloseHost(mine); }));
+        };
+        ContextMenu = menu;
+        MenuDismiss.Track(_hwnd, delegate
+        {
+            if (menu.IsOpen)
+                menu.IsOpen = false;
+        });
+        menu.IsOpen = true;
+    }
+
+    void MaybeCloseHost(int epoch)
+    {
+        if (epoch != _menuEpoch)
+            return;
+        if (!_menuHost)
+            return;
+        if (_holdHost)
+            return;
+        if (_cal != null)
+            return;
+        if (OwnedWindows != null && OwnedWindows.Count > 0)
+            return;
+        Close();
+    }
+
+    void Reveal()
+    {
+        _menuEpoch++;
+        if (!_menuHost)
+            return;
+        _menuHost = false;
+        IsHitTestVisible = true;
+        if (!double.IsNaN(_s.X) && !double.IsNaN(_s.Y))
+        {
+            Left = _s.X;
+            Top = _s.Y;
+            _hasPos = true;
+            ClampToWorkArea();
+        }
+        else
+            PlaceAsNewIcon();
+        if (_s.Snap)
+            SnapToGrid();
+        Topmost = _s.Topmost;
+        if (_s.Topmost && !_topmostTimer.IsEnabled)
+            _topmostTimer.Start();
+        ReassertTopmost();
+        if (ContextMenu != null)
+            ContextMenu.IsOpen = false;
+    }
+
     void OnClosing(object sender, System.ComponentModel.CancelEventArgs e)
     {
+        MenuDismiss.Stop();
         StopAlarmUi();
         if (_cal != null)
         {
             try { _cal.Close(); }
             catch { }
         }
-        SaveSettings();
+        if (!_menuHost)
+            SaveSettings();
     }
 
     void ApplyTheme()
@@ -642,14 +1425,27 @@ internal sealed class ClockWindow : Window
 
     void RenameLabel()
     {
-        RenameDialog dlg = new RenameDialog(_s.LabelText);
-        dlg.Owner = this;
-        bool? ok = dlg.ShowDialog();
-        if (ok == true)
+        _holdHost = true;
+        bool? ok = false;
+        try
         {
-            _s.LabelText = dlg.LabelText;
-            ApplyLabel();
-            SaveSettings();
+            RenameDialog dlg = new RenameDialog(_s.LabelText);
+            dlg.Owner = this;
+            if (_menuHost)
+                dlg.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            ok = dlg.ShowDialog();
+            if (ok == true)
+            {
+                _s.LabelText = dlg.LabelText;
+                ApplyLabel();
+                SaveSettings();
+            }
+        }
+        finally
+        {
+            _holdHost = false;
+            if (_menuHost)
+                Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, new Action(delegate { MaybeCloseHost(_menuEpoch); }));
         }
     }
 
@@ -705,13 +1501,17 @@ internal sealed class ClockWindow : Window
         }
         else
         {
-            _ampm.Text = pm ? "PM" : "AM";
+            string am = Ui.Culture.DateTimeFormat.AMDesignator;
+            string pmTxt = Ui.Culture.DateTimeFormat.PMDesignator;
+            if (am == null || am.Length == 0) am = "AM";
+            if (pmTxt == null || pmTxt.Length == 0) pmTxt = "PM";
+            _ampm.Text = pm ? pmTxt : am;
             _ampm.Visibility = Visibility.Visible;
         }
 
         if (_s.Date)
         {
-            _date.Text = now.ToString(_s.Size == 0 ? "ddd d" : "ddd d MMM", Fr);
+            _date.Text = now.ToString(_s.Size == 0 ? "ddd d" : "ddd d MMM", Ui.Culture);
             _date.Visibility = Visibility.Visible;
         }
         else
@@ -723,9 +1523,9 @@ internal sealed class ClockWindow : Window
         _bell.Visibility = _s.AlarmOn ? Visibility.Visible : Visibility.Collapsed;
         _statusRow.Visibility = (_s.AlarmOn || !_s.TwentyFour) ? Visibility.Visible : Visibility.Collapsed;
 
-        ToolTip = now.ToString("dddd d MMMM yyyy", Fr) + Environment.NewLine + now.ToString(_s.TwentyFour ? "HH:mm:ss" : "h:mm:ss tt", Fr);
+        ToolTip = now.ToString("dddd d MMMM yyyy", Ui.Culture) + Environment.NewLine + now.ToString(_s.TwentyFour ? "HH:mm:ss" : "h:mm:ss tt", Ui.Culture);
 
-        if (_s.Chime && now.Minute == 0 && now.Second == 0 && _lastChimeHour != now.Hour)
+        if (!_menuHost && _s.Chime && now.Minute == 0 && now.Second == 0 && _lastChimeHour != now.Hour)
         {
             _lastChimeHour = now.Hour;
             SystemSounds.Asterisk.Play();
@@ -733,7 +1533,8 @@ internal sealed class ClockWindow : Window
         if (now.Second != 0)
             _lastChimeHour = -1;
 
-        CheckAlarm(now);
+        if (!_menuHost)
+            CheckAlarm(now);
     }
 
     void CheckAlarm(DateTime now)
@@ -811,11 +1612,24 @@ internal sealed class ClockWindow : Window
         }
         _cal = new CalendarPopup(DateTime.Today);
         _cal.Owner = this;
-        _cal.Closed += delegate { _cal = null; };
+        _cal.Closed += delegate
+        {
+            _cal = null;
+            if (_menuHost)
+                Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, new Action(delegate { MaybeCloseHost(_menuEpoch); }));
+        };
         UpdateLayout();
-        Point p = _face.PointToScreen(new Point(0, _face.ActualHeight + 6));
-        _cal.Left = p.X / _dpi;
-        _cal.Top = p.Y / _dpi;
+        if (_menuHost)
+        {
+            _cal.Left = _menuX / _dpi;
+            _cal.Top = _menuY / _dpi;
+        }
+        else
+        {
+            Point p = _face.PointToScreen(new Point(0, _face.ActualHeight + 6));
+            _cal.Left = p.X / _dpi;
+            _cal.Top = p.Y / _dpi;
+        }
         Rect work = WorkAreaDip();
         _cal.Show();
         _cal.UpdateLayout();
@@ -831,17 +1645,30 @@ internal sealed class ClockWindow : Window
 
     void OpenAlarm()
     {
-        AlarmDialog dlg = new AlarmDialog(_s.AlarmOn, _s.AlarmH, _s.AlarmM);
-        dlg.Owner = this;
-        bool? ok = dlg.ShowDialog();
-        if (ok == true)
+        _holdHost = true;
+        bool? ok = false;
+        try
         {
-            _s.AlarmOn = dlg.AlarmOn;
-            _s.AlarmH = dlg.Hour;
-            _s.AlarmM = dlg.Minute;
-            _alarmMutedDay = DateTime.MinValue;
-            TickClock();
-            SaveSettings();
+            AlarmDialog dlg = new AlarmDialog(_s.AlarmOn, _s.AlarmH, _s.AlarmM);
+            dlg.Owner = this;
+            if (_menuHost)
+                dlg.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            ok = dlg.ShowDialog();
+            if (ok == true)
+            {
+                _s.AlarmOn = dlg.AlarmOn;
+                _s.AlarmH = dlg.Hour;
+                _s.AlarmM = dlg.Minute;
+                _alarmMutedDay = DateTime.MinValue;
+                TickClock();
+                SaveSettings();
+            }
+        }
+        finally
+        {
+            _holdHost = false;
+            if (_menuHost)
+                Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, new Action(delegate { MaybeCloseHost(_menuEpoch); }));
         }
     }
 
@@ -850,7 +1677,7 @@ internal sealed class ClockWindow : Window
         try
         {
             DateTime now = DateTime.Now;
-            Clipboard.SetText(now.ToString("dddd d MMMM yyyy HH:mm:ss", Fr));
+            Clipboard.SetText(now.ToString("dddd d MMMM yyyy HH:mm:ss", Ui.Culture));
         }
         catch { }
     }
@@ -976,6 +1803,7 @@ internal sealed class ClockWindow : Window
                 else if (k == "alarmM") _s.AlarmM = int.Parse(v, CultureInfo.InvariantCulture);
                 else if (k == "label") _s.LabelText = UnescapeLabel(v);
                 else if (k == "showLabel") _s.ShowLabel = v != "0";
+                else if (k == "lang") Ui.ApplySaved(v);
             }
             if (!double.IsNaN(_s.X) && !double.IsNaN(_s.Y))
             {
@@ -1001,8 +1829,11 @@ internal sealed class ClockWindow : Window
     {
         try
         {
-            _s.X = Left;
-            _s.Y = Top;
+            if (!_menuHost)
+            {
+                _s.X = Left;
+                _s.Y = Top;
+            }
             string dir = System.IO.Path.GetDirectoryName(_settingsPath);
             if (!Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
@@ -1023,7 +1854,8 @@ internal sealed class ClockWindow : Window
                 "alarmH=" + _s.AlarmH.ToString(CultureInfo.InvariantCulture) + "\r\n" +
                 "alarmM=" + _s.AlarmM.ToString(CultureInfo.InvariantCulture) + "\r\n" +
                 "label=" + EscapeLabel(_s.LabelText) + "\r\n" +
-                "showLabel=" + B(_s.ShowLabel) + "\r\n");
+                "showLabel=" + B(_s.ShowLabel) + "\r\n" +
+                "lang=" + Ui.Code + "\r\n");
         }
         catch { }
     }
@@ -1056,7 +1888,8 @@ internal sealed class ClockWindow : Window
             dynamic lnk = shell.CreateShortcut(_startupLnk);
             lnk.TargetPath = _exePath;
             lnk.WorkingDirectory = System.IO.Path.GetDirectoryName(_exePath);
-            lnk.Description = "Clock";
+            lnk.Arguments = _vah ? "--vah" : "";
+            lnk.Description = _vah ? "VAH Clock" : "Clock";
             lnk.Save();
         }
         catch { }
@@ -1197,7 +2030,9 @@ internal sealed class CalendarPopup : Window
 {
     public CalendarPopup(DateTime day)
     {
-        Title = "Calendrier";
+        Title = Ui.S("Calendar", "Calendrier");
+        Language = System.Windows.Markup.XmlLanguage.GetLanguage(Ui.Ietf);
+        FontFamily = Ui.UiFont;
         WindowStyle = WindowStyle.None;
         AllowsTransparency = true;
         Background = Brushes.Transparent;
@@ -1208,6 +2043,7 @@ internal sealed class CalendarPopup : Window
         ShowActivated = true;
 
         System.Windows.Controls.Calendar cal = new System.Windows.Controls.Calendar();
+        cal.Language = System.Windows.Markup.XmlLanguage.GetLanguage(Ui.Ietf);
         cal.SelectedDate = day;
         cal.DisplayDate = day;
         cal.Margin = new Thickness(8);
@@ -1245,7 +2081,9 @@ internal sealed class RenameDialog : Window
 
     public RenameDialog(string current)
     {
-        Title = "Nom";
+        Title = Ui.S("Name", "Nom");
+        Language = System.Windows.Markup.XmlLanguage.GetLanguage(Ui.Ietf);
+        FontFamily = Ui.UiFont;
         WindowStyle = WindowStyle.None;
         AllowsTransparency = true;
         Background = Brushes.Transparent;
@@ -1256,9 +2094,9 @@ internal sealed class RenameDialog : Window
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
         TextBlock hint = new TextBlock();
-        hint.Text = "Nom sous l'icone";
+        hint.Text = Ui.S("Name under the icon", "Nom sous l'icone");
         hint.Foreground = Brushes.White;
-        hint.FontFamily = new FontFamily("Segoe UI");
+        hint.FontFamily = Ui.UiFont;
         hint.FontSize = 13;
         hint.Margin = new Thickness(0, 0, 0, 10);
 
@@ -1271,7 +2109,7 @@ internal sealed class RenameDialog : Window
         _box.Margin = new Thickness(0, 0, 0, 16);
 
         Button ok = DarkButton("OK");
-        Button cancel = DarkButton("Annuler");
+        Button cancel = DarkButton(Ui.S("Cancel", "Annuler"));
         ok.Click += delegate { Accept(); };
         cancel.Click += delegate { DialogResult = false; Close(); };
 
@@ -1345,7 +2183,9 @@ internal sealed class AlarmDialog : Window
 
     public AlarmDialog(bool on, int hour, int minute)
     {
-        Title = "Alarme";
+        Title = Ui.S("Alarm", "Alarme");
+        Language = System.Windows.Markup.XmlLanguage.GetLanguage(Ui.Ietf);
+        FontFamily = Ui.UiFont;
         WindowStyle = WindowStyle.None;
         AllowsTransparency = true;
         Background = Brushes.Transparent;
@@ -1356,7 +2196,7 @@ internal sealed class AlarmDialog : Window
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
         _on = new CheckBox();
-        _on.Content = "Activer l'alarme";
+        _on.Content = Ui.S("Enable alarm", "Activer l'alarme");
         _on.IsChecked = on;
         _on.Foreground = Brushes.White;
         _on.Margin = new Thickness(0, 0, 0, 12);
@@ -1382,14 +2222,14 @@ internal sealed class AlarmDialog : Window
         timeRow.Children.Add(_minutes);
 
         TextBlock hint = new TextBlock();
-        hint.Text = "Heure (24 h)  —  tous les jours";
+        hint.Text = Ui.S("Time (24 h) — every day", "Heure (24 h)  —  tous les jours");
         hint.Foreground = new SolidColorBrush(Color.FromRgb(0xAA, 0xAA, 0xAA));
         hint.FontSize = 11;
         hint.Margin = new Thickness(0, 8, 0, 14);
         hint.HorizontalAlignment = HorizontalAlignment.Center;
 
         Button ok = DarkButton("OK");
-        Button cancel = DarkButton("Annuler");
+        Button cancel = DarkButton(Ui.S("Cancel", "Annuler"));
         ok.Click += delegate
         {
             AlarmOn = _on.IsChecked == true;
@@ -1474,7 +2314,9 @@ internal sealed class AlarmAlert : Window
 
     public AlarmAlert(int hour, int minute)
     {
-        Title = "Alarme";
+        Title = Ui.S("Alarm", "Alarme");
+        Language = System.Windows.Markup.XmlLanguage.GetLanguage(Ui.Ietf);
+        FontFamily = Ui.UiFont;
         WindowStyle = WindowStyle.None;
         AllowsTransparency = true;
         Background = Brushes.Transparent;
@@ -1486,7 +2328,7 @@ internal sealed class AlarmAlert : Window
         ShowActivated = true;
 
         TextBlock title = new TextBlock();
-        title.Text = "Alarme";
+        title.Text = Ui.S("Alarm", "Alarme");
         title.Foreground = Brushes.White;
         title.FontSize = 13;
         title.HorizontalAlignment = HorizontalAlignment.Center;
@@ -1501,13 +2343,13 @@ internal sealed class AlarmAlert : Window
         time.Margin = new Thickness(0, 6, 0, 14);
 
         Button snooze = new Button();
-        snooze.Content = "Reporter 5 min";
+        snooze.Content = Ui.S("Snooze 5 min", "Reporter 5 min");
         snooze.Width = 120;
         snooze.Height = 30;
         snooze.Click += delegate { Snooze = true; Close(); };
 
         Button stop = new Button();
-        stop.Content = "Arreter";
+        stop.Content = Ui.S("Stop", "Arreter");
         stop.Width = 88;
         stop.Height = 30;
         stop.Margin = new Thickness(8, 0, 0, 0);
