@@ -16,14 +16,15 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Media.Effects;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using Microsoft.Win32;
 
-[assembly: AssemblyTitle("Clock")]
+[assembly: AssemblyTitle("ZTime")]
 [assembly: AssemblyDescription("Digital desktop clock")]
-[assembly: AssemblyProduct("Clock")]
+[assembly: AssemblyProduct("ZTime")]
 [assembly: AssemblyCompany("Fred Zarma")]
 [assembly: AssemblyCopyright("Copyright Fred Zarma 2026")]
-[assembly: AssemblyVersion("2.2.3.0")]
-[assembly: AssemblyFileVersion("2.2.3.0")]
+[assembly: AssemblyVersion("2.3.1.0")]
+[assembly: AssemblyFileVersion("2.3.1.0")]
 
 internal static class Ui
 {
@@ -67,6 +68,10 @@ internal static class Ui
         Add("Run at startup", "开机启动", "स्टार्टअप पर चलाएँ", "Ejecutar al inicio", "Lancer au démarrage", "Запускать при старте", "起動時に実行", "Beim Start ausführen");
         Add("Windows date and time", "Windows 日期和时间", "Windows दिनांक और समय", "Fecha y hora de Windows", "Date et heure Windows", "Дата и время Windows", "Windows の日付と時刻", "Windows-Datum und -Uhrzeit");
         Add("Close", "关闭", "बंद करें", "Cerrar", "Fermer", "Закрыть", "閉じる", "Schließen");
+        Add("Uninstall...", "卸载...", "अनइंस्टॉल...", "Desinstalar...", "Désinstaller...", "Удалить...", "アンインストール...", "Deinstallieren...");
+        Add("Uninstall ZTime from this computer?", "要从这台电脑卸载 ZTime 吗？", "इस कंप्यूटर से ZTime अनइंस्टॉल करें?", "¿Desinstalar ZTime de este equipo?", "Désinstaller ZTime de cet ordinateur ?", "Удалить ZTime с этого компьютера?", "このコンピューターから ZTime をアンインストールしますか？", "ZTime von diesem Computer deinstallieren?");
+        Add("Also delete saved settings", "同时删除已保存的设置", "सहेजी गई सेटिंग भी हटाएँ", "Eliminar también los ajustes guardados", "Supprimer aussi les réglages enregistrés", "Также удалить сохранённые настройки", "保存した設定も削除する", "Gespeicherte Einstellungen ebenfalls löschen");
+        Add("Uninstall", "卸载", "अनइंस्टॉल", "Desinstalar", "Désinstaller", "Удалить", "アンインストール", "Deinstallieren");
         Add("Calendar", "日历", "कैलेंडर", "Calendario", "Calendrier", "Календарь", "カレンダー", "Kalender");
         Add("Name under the icon", "图标下的名称", "आइकन के नीचे नाम", "Nombre bajo el icono", "Nom sous l'icône", "Имя под значком", "アイコン下の名前", "Name unter dem Symbol");
         Add("Cancel", "取消", "रद्द करें", "Cancelar", "Annuler", "Отмена", "キャンセル", "Abbrechen");
@@ -395,7 +400,7 @@ internal static class ClockIpc
         IntPtr hwnd = IntPtr.Zero;
         for (int i = 0; i < 20 && hwnd == IntPtr.Zero; i++)
         {
-            hwnd = FindWindow(null, "VAH Clock");
+            hwnd = FindWindow(null, "VAH ZTime");
             if (hwnd == IntPtr.Zero)
                 Thread.Sleep(50);
         }
@@ -520,6 +525,23 @@ internal static class MenuDismiss
 
 internal static class Program
 {
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    static extern int GetCurrentPackageFullName(ref int packageFullNameLength, IntPtr packageFullName);
+
+    internal static bool IsPackaged()
+    {
+        try
+        {
+            int length = 0;
+            int rc = GetCurrentPackageFullName(ref length, IntPtr.Zero);
+            return rc != 15700;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     [STAThread]
     private static void Main(string[] args)
     {
@@ -536,6 +558,11 @@ internal static class Program
         {
             for (int i = 0; i < args.Length; i++)
             {
+                if (string.Equals(args[i], "--uninstall", StringComparison.OrdinalIgnoreCase))
+                {
+                    LaunchSetupUninstall();
+                    return;
+                }
                 if (args[i] == "--vah")
                     vah = true;
                 else if (args[i] == "--reveal")
@@ -549,7 +576,7 @@ internal static class Program
                 }
             }
         }
-        string mutexName = vah ? @"Local\ValheimAdminHelper.Clock" : @"Local\DesktopClock.IconWidget";
+        string mutexName = vah ? @"Local\ValheimAdminHelper.ZTime" : @"Local\ZTime.IconWidget";
         bool created;
         Mutex mutex = new Mutex(true, mutexName, out created);
         if (!created)
@@ -582,6 +609,56 @@ internal static class Program
         if (field != null)
             field.SetValue(null, false);
     }
+
+    internal static void LaunchSetupUninstall()
+    {
+        try
+        {
+            string setup = FindSetupExe(Assembly.GetExecutingAssembly().Location);
+            if (setup == null)
+                return;
+            ProcessStartInfo psi = new ProcessStartInfo();
+            psi.FileName = setup;
+            psi.Arguments = "--uninstall";
+            psi.UseShellExecute = true;
+            Process.Start(psi);
+        }
+        catch { }
+    }
+
+    internal static string FindSetupExe(string clockExe)
+    {
+        if (clockExe == null || clockExe.Length == 0)
+            return null;
+        string dir = System.IO.Path.GetDirectoryName(clockExe);
+        string beside = System.IO.Path.Combine(dir, "Setup.exe");
+        if (File.Exists(beside))
+            return beside;
+        try
+        {
+            using (RegistryKey key = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall\ZTime"))
+            {
+                if (key != null)
+                {
+                    object loc = key.GetValue("InstallLocation");
+                    if (loc != null)
+                    {
+                        string fromReg = System.IO.Path.Combine(loc.ToString().Trim(), "Setup.exe");
+                        if (File.Exists(fromReg))
+                            return fromReg;
+                    }
+                }
+            }
+        }
+        catch { }
+        string installed = System.IO.Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+            "ZTime",
+            "Setup.exe");
+        if (File.Exists(installed))
+            return installed;
+        return null;
+    }
 }
 
 internal sealed class ClockSettings
@@ -601,7 +678,7 @@ internal sealed class ClockSettings
     public bool AlarmOn;
     public int AlarmH = 7;
     public int AlarmM;
-    public string LabelText = "Clock";
+    public string LabelText = "ZTime";
     public bool ShowLabel = true;
 }
 
@@ -698,7 +775,7 @@ internal sealed class ClockWindow : Window
         if (vah)
         {
             _settingsPath = System.IO.Path.Combine(appData, "ValheimAdminHelper", "clock.txt");
-            _startupLnk = System.IO.Path.Combine(startup, "VAH Clock.lnk");
+            _startupLnk = System.IO.Path.Combine(startup, "VAH ZTime.lnk");
             _s.Size = 1;
             _s.Theme = 0;
             _s.TwentyFour = true;
@@ -709,13 +786,13 @@ internal sealed class ClockWindow : Window
         }
         else
         {
-            _settingsPath = System.IO.Path.Combine(appData, "DesktopClock", "settings.txt");
-            _startupLnk = System.IO.Path.Combine(startup, "Clock.lnk");
+            _settingsPath = System.IO.Path.Combine(appData, "ZTime", "settings.txt");
+            _startupLnk = System.IO.Path.Combine(startup, "ZTime.lnk");
         }
 
         LoadSettings();
 
-        Title = vah ? "VAH Clock" : "Clock";
+        Title = vah ? "VAH ZTime" : "ZTime";
         WindowStyle = WindowStyle.None;
         AllowsTransparency = true;
         Background = Brushes.Transparent;
@@ -792,12 +869,12 @@ internal sealed class ClockWindow : Window
         int[] oy = { -1, 0, 1, -1, 1, -1, 0, 1 };
         for (int i = 0; i < 8; i++)
         {
-            TextBlock halo = IconLabel("Clock", Brushes.Black);
+            TextBlock halo = IconLabel("ZTime", Brushes.Black);
             halo.Margin = new Thickness(ox[i], oy[i], -ox[i], -oy[i]);
             _labelHost.Children.Add(halo);
             _labelParts.Add(halo);
         }
-        TextBlock label = IconLabel("Clock", Brushes.White);
+        TextBlock label = IconLabel("ZTime", Brushes.White);
         _labelHost.Children.Add(label);
         _labelParts.Add(label);
 
@@ -999,16 +1076,27 @@ internal sealed class ClockWindow : Window
             }
             SaveSettings();
         }));
-        menu.Items.Add(Item(Ui.S("Run at startup", "Lancer au demarrage"), true, File.Exists(_startupLnk), delegate
+        if (Program.IsPackaged())
         {
-            if (File.Exists(_startupLnk))
+            menu.Items.Add(Item(Ui.S("Run at startup", "Lancer au demarrage"), false, false, delegate
             {
-                try { File.Delete(_startupLnk); }
+                try { Process.Start("ms-settings:startupapps"); }
                 catch { }
-            }
-            else
-                CreateStartupShortcut();
-        }));
+            }));
+        }
+        else
+        {
+            menu.Items.Add(Item(Ui.S("Run at startup", "Lancer au demarrage"), true, File.Exists(_startupLnk), delegate
+            {
+                if (File.Exists(_startupLnk))
+                {
+                    try { File.Delete(_startupLnk); }
+                    catch { }
+                    }
+                else
+                    CreateStartupShortcut();
+            }));
+        }
         menu.Items.Add(Item(Ui.S("Windows date and time", "Date et heure Windows"), false, false, delegate
         {
             try { Process.Start("ms-settings:dateandtime"); }
@@ -1020,6 +1108,8 @@ internal sealed class ClockWindow : Window
             try { Process.Start("mailto:zarma@sylm.info"); }
             catch { }
         }));
+        if (!_vah && !Program.IsPackaged())
+            menu.Items.Add(Item(Ui.S("Uninstall...", "Désinstaller..."), false, false, delegate { RequestUninstall(); }));
         menu.Items.Add(Item(Ui.S("Close", "Fermer"), false, false, delegate { Close(); }));
     }
 
@@ -1067,6 +1157,56 @@ internal sealed class ClockWindow : Window
             FillMenu(ContextMenu);
         if (_hit.ContextMenu != null && _hit.ContextMenu != ContextMenu)
             FillMenu(_hit.ContextMenu);
+    }
+
+    void RequestUninstall()
+    {
+        string setup = Program.FindSetupExe(_exePath);
+        if (setup != null)
+        {
+            try
+            {
+                ProcessStartInfo psi = new ProcessStartInfo();
+                psi.FileName = setup;
+                psi.Arguments = "--uninstall";
+                psi.UseShellExecute = true;
+                Process.Start(psi);
+            }
+            catch { }
+            return;
+        }
+        _holdHost = true;
+        try
+        {
+            UninstallDialog dlg = new UninstallDialog();
+            dlg.Owner = this;
+            bool? ok = dlg.ShowDialog();
+            if (ok == true)
+            {
+                if (dlg.WipeSettings)
+                {
+                    try
+                    {
+                        string dir = System.IO.Path.GetDirectoryName(_settingsPath);
+                        string folder = dir == null ? "" : System.IO.Path.GetFileName(dir.TrimEnd('\\', '/'));
+                        if (dir != null && Directory.Exists(dir) && string.Equals(folder, "ZTime", StringComparison.OrdinalIgnoreCase))
+                            Directory.Delete(dir, true);
+                    }
+                    catch { }
+                }
+                try
+                {
+                    if (File.Exists(_startupLnk))
+                        File.Delete(_startupLnk);
+                }
+                catch { }
+                Close();
+            }
+        }
+        finally
+        {
+            _holdHost = false;
+        }
     }
 
     void RelocalizeCalendar()
@@ -1417,7 +1557,7 @@ internal sealed class ClockWindow : Window
     {
         string t = _s.LabelText;
         if (t == null || t.Trim().Length == 0)
-            t = "Clock";
+            t = "ZTime";
         for (int i = 0; i < _labelParts.Count; i++)
             _labelParts[i].Text = t;
         _labelHost.Visibility = _s.ShowLabel ? Visibility.Visible : Visibility.Collapsed;
@@ -1775,9 +1915,19 @@ internal sealed class ClockWindow : Window
     {
         try
         {
-            if (!File.Exists(_settingsPath))
+            string path = _settingsPath;
+            if (!File.Exists(path) && !_vah)
+            {
+                string legacy = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "DesktopClock",
+                    "settings.txt");
+                if (File.Exists(legacy))
+                    path = legacy;
+            }
+            if (!File.Exists(path))
                 return;
-            string[] lines = File.ReadAllLines(_settingsPath);
+            string[] lines = File.ReadAllLines(path);
             for (int i = 0; i < lines.Length; i++)
             {
                 string line = lines[i];
@@ -1818,7 +1968,9 @@ internal sealed class ClockWindow : Window
             if (_s.OpacityPct != 100 && _s.OpacityPct != 80 && _s.OpacityPct != 60)
                 _s.OpacityPct = 100;
             if (_s.LabelText == null || _s.LabelText.Trim().Length == 0)
-                _s.LabelText = "Clock";
+                _s.LabelText = "ZTime";
+            if (!_vah && _s.LabelText == "Clock")
+                _s.LabelText = "ZTime";
             if (_s.LabelText.Length > 32)
                 _s.LabelText = _s.LabelText.Substring(0, 32);
         }
@@ -1868,14 +2020,14 @@ internal sealed class ClockWindow : Window
     static string EscapeLabel(string s)
     {
         if (s == null)
-            return "Clock";
+            return "ZTime";
         return s.Replace("\\", "\\\\").Replace("\r", "").Replace("\n", " ").Replace("=", "\\=");
     }
 
     static string UnescapeLabel(string s)
     {
         if (s == null)
-            return "Clock";
+            return "ZTime";
         return s.Replace("\\=", "=").Replace("\\\\", "\\");
     }
 
@@ -1889,7 +2041,7 @@ internal sealed class ClockWindow : Window
             lnk.TargetPath = _exePath;
             lnk.WorkingDirectory = System.IO.Path.GetDirectoryName(_exePath);
             lnk.Arguments = _vah ? "--vah" : "";
-            lnk.Description = _vah ? "VAH Clock" : "Clock";
+            lnk.Description = _vah ? "VAH ZTime" : "ZTime";
             lnk.Save();
         }
         catch { }
@@ -2074,6 +2226,96 @@ internal sealed class CalendarPopup : Window
     }
 }
 
+internal sealed class UninstallDialog : Window
+{
+    readonly CheckBox _wipe;
+    public bool WipeSettings;
+
+    public UninstallDialog()
+    {
+        Title = Ui.S("Uninstall", "Désinstaller");
+        Language = System.Windows.Markup.XmlLanguage.GetLanguage(Ui.Ietf);
+        FontFamily = Ui.UiFont;
+        WindowStyle = WindowStyle.None;
+        AllowsTransparency = true;
+        Background = Brushes.Transparent;
+        ResizeMode = ResizeMode.NoResize;
+        ShowInTaskbar = false;
+        Topmost = true;
+        SizeToContent = SizeToContent.WidthAndHeight;
+        WindowStartupLocation = WindowStartupLocation.CenterOwner;
+
+        TextBlock hint = new TextBlock();
+        hint.Text = Ui.S("Uninstall ZTime from this computer?", "Désinstaller ZTime de cet ordinateur ?");
+        hint.Foreground = Brushes.White;
+        hint.FontSize = 13;
+        hint.TextWrapping = TextWrapping.Wrap;
+        hint.Margin = new Thickness(0, 0, 0, 12);
+
+        _wipe = new CheckBox();
+        _wipe.Content = Ui.S("Also delete saved settings", "Supprimer aussi les réglages enregistrés");
+        _wipe.Foreground = Brushes.White;
+        _wipe.Margin = new Thickness(0, 0, 0, 16);
+        _wipe.FontFamily = Ui.UiFont;
+        _wipe.FontSize = 13;
+
+        Button ok = DarkButton(Ui.S("Uninstall", "Désinstaller"));
+        Button cancel = DarkButton(Ui.S("Cancel", "Annuler"));
+        ok.Click += delegate
+        {
+            WipeSettings = _wipe.IsChecked == true;
+            DialogResult = true;
+            Close();
+        };
+        cancel.Click += delegate
+        {
+            DialogResult = false;
+            Close();
+        };
+
+        StackPanel buttons = new StackPanel();
+        buttons.Orientation = Orientation.Horizontal;
+        buttons.HorizontalAlignment = HorizontalAlignment.Right;
+        buttons.Children.Add(cancel);
+        buttons.Children.Add(ok);
+
+        StackPanel body = new StackPanel();
+        body.Margin = new Thickness(18);
+        body.Children.Add(hint);
+        body.Children.Add(_wipe);
+        body.Children.Add(buttons);
+
+        Border chrome = new Border();
+        chrome.CornerRadius = new CornerRadius(10);
+        chrome.Background = new SolidColorBrush(Color.FromRgb(0x1C, 0x1C, 0x1E));
+        chrome.BorderBrush = new SolidColorBrush(Color.FromRgb(0x3A, 0x3A, 0x40));
+        chrome.BorderThickness = new Thickness(1);
+        chrome.Width = 320;
+        chrome.Child = body;
+        Content = chrome;
+
+        KeyDown += delegate(object s, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+            {
+                DialogResult = false;
+                Close();
+            }
+        };
+    }
+
+    static Button DarkButton(string text)
+    {
+        Button b = new Button();
+        b.Content = text;
+        b.Width = 110;
+        b.Height = 28;
+        b.Margin = new Thickness(8, 0, 0, 0);
+        b.FontFamily = new FontFamily("Segoe UI");
+        return b;
+    }
+}
+
 internal sealed class RenameDialog : Window
 {
     readonly TextBox _box;
@@ -2101,7 +2343,7 @@ internal sealed class RenameDialog : Window
         hint.Margin = new Thickness(0, 0, 0, 10);
 
         _box = new TextBox();
-        _box.Text = current == null ? "Clock" : current;
+        _box.Text = current == null ? "ZTime" : current;
         _box.FontFamily = new FontFamily("Segoe UI");
         _box.FontSize = 14;
         _box.MaxLength = 32;
@@ -2151,7 +2393,7 @@ internal sealed class RenameDialog : Window
     {
         string t = _box.Text == null ? "" : _box.Text.Trim();
         if (t.Length == 0)
-            t = "Clock";
+            t = "ZTime";
         if (t.Length > 32)
             t = t.Substring(0, 32);
         LabelText = t;

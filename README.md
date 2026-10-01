@@ -1,6 +1,6 @@
-# Clock
+# ZTime
 
-A free digital desktop clock for Windows.
+ZTime is a free digital desktop clock for Windows.
 
 A small always-on-top gadget you can drag like a desktop icon, with a 7-segment LED display, date, calendar, alarm and themes.
 
@@ -8,13 +8,13 @@ A small always-on-top gadget you can drag like a desktop icon, with a 7-segment 
 
 ## Download
 
-The latest version is in [Releases](../../releases): the `Clock.exe` file.
+The latest version is in [Releases](../../releases): the `ZTime.exe` file.
 
-No installer. Double-click to run. Copy the exe wherever you like (desktop, etc.).
+Double-click `ZTime.exe` to run it without installing, or run `Setup.exe` (administrator) to install. You choose the folder, the desktop shortcut, and the Start menu shortcut.
 
-Windows 10 or 11, 64-bit. Requires .NET Framework 4 (already present on Windows).
+To uninstall: right-click the clock and choose **Uninstall...**, or use Apps & features.
 
-On first launch, Windows SmartScreen may show a warning (unsigned application). Choose *More info*, then *Run anyway*.
+Windows 10 or 11, 64-bit. Requires .NET Framework 4 (already present on Windows). Microsoft has certified the app.
 
 ## Usage
 
@@ -24,7 +24,7 @@ On first launch, Windows SmartScreen may show a warning (unsigned application). 
 | Double-click | Calendar |
 | Right-click | Menu |
 
-In the menu: language flags (English, Mandarin, Hindi, Spanish, French, Russian, Japanese, German), calendar, copy the time, size, color, seconds, date, 12/24-hour format, alarm, icon name (change or hide), always on top, run at startup, copyright (zarma@sylm.info).
+In the menu: language flags (English, Mandarin, Hindi, Spanish, French, Russian, Japanese, German), calendar, copy the time, size, color, seconds, date, 12/24-hour format, alarm, icon name (change or hide), always on top, run at startup, uninstall, copyright (zarma@sylm.info).
 
 ## Build
 
@@ -32,9 +32,9 @@ In the menu: language flags (English, Mandarin, Hindi, Spanish, French, Russian,
 powershell -NoProfile -ExecutionPolicy Bypass -File .\Build.ps1
 ```
 
-## Next version
+## Install / uninstall
 
-See `NEXT.md`: installer (copy into Program Files + desktop shortcut) and clean uninstall.
+See `NEXT.md`.
 
 ## License
 

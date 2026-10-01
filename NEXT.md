@@ -1,20 +1,21 @@
-# Next version — install and uninstall
+# Install and uninstall
 
-To add, not implemented yet.
+Implemented in ZTime 2.3.
 
 ## Install
 
-- Create a subdirectory in Program Files, e.g. `C:\Program Files\Clock\` (or `C:\Program Files\Fred Zarma\Clock\`).
-- Copy `Clock.exe` there (and the icon if needed).
-- Create a desktop shortcut named Clock.
-- Ideally also: a Start menu shortcut, and an entry in Apps & features for uninstall.
+Run `Setup.exe` (administrator). You choose:
 
-The installer will probably need administrator rights (write access to Program Files).
+- The install folder (default `C:\Program Files\ZTime\`)
+- Whether to add a desktop shortcut named ZTime
+- Whether to add a Start menu shortcut
 
-## Uninstall (clean)
+It copies `ZTime.exe`, `Setup.exe` and `ztime.ico`, then registers ZTime in Apps & features.
 
-- Delete the install directory.
-- Delete the desktop shortcut.
-- Delete the Start menu shortcut.
-- Delete the uninstall registry key.
-- Leave no leftover files. User settings (`%AppData%\DesktopClock`): offer to keep them or wipe everything.
+## Uninstall
+
+From the ZTime menu (**Uninstall...**), from `Setup.exe --uninstall`, or from Apps & features.
+
+Removes the install folder, desktop and Start menu shortcuts, the startup shortcut, and the uninstall registry key.
+
+Offers to keep or delete settings in `%AppData%\ZTime`.

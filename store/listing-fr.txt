@@ -1,0 +1,21 @@
+Nom du produit : ZTime
+Description courte : Horloge de bureau gratuite, affichage LED 7 segments.
+Description :
+ZTime est une horloge numérique gratuite qui se pose sur le bureau comme une icône. Elle affiche l'heure du PC en LED 7 segments, reste au-dessus des autres fenêtres et n'apparaît pas dans la barre des tâches.
+
+On la déplace en la faisant glisser. Un double-clic ouvre le calendrier. Un clic droit ouvre le menu : langue, alarme, taille, couleur, secondes, date, format 24 heures, opacité et nom sous l'icône.
+
+Langues : anglais, mandarin, hindi, espagnol, français, russe, japonais et allemand.
+
+Copyright Fred Zarma 2026. Gratuite, sans publicité et sans télémétrie.
+
+Fonctionnalités :
+Horloge LED 7 segments
+Calendrier et alarme quotidienne
+Huit langues
+Taille, couleur et opacité
+Toujours au-dessus des autres fenêtres
+
+Catégorie : Personnalisation
+Prix : Gratuit
+Confidentialité : l'application ne collecte ni ne transmet aucune donnée personnelle.

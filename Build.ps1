@@ -4,11 +4,14 @@ $fw = 'C:\Windows\Microsoft.NET\Framework64\v4.0.30319'
 $csc = Join-Path $fw 'csc.exe'
 $wpf = Join-Path $fw 'WPF'
 
-Get-Process -Name 'Clock' -ErrorAction SilentlyContinue | Where-Object {
+$dist = Join-Path $here 'dist'
+New-Item -ItemType Directory -Force -Path $dist | Out-Null
+
+Get-Process -Name 'ZTime' -ErrorAction SilentlyContinue | Where-Object {
     $_.Path -and (
-        $_.Path -like '*\Clock\Clock.exe' -or
-        $_.Path -like '*\Clock.exe' -or
-        $_.Path -like '*\Desktop\Clock.exe'
+        $_.Path -like '*\ZTime\ZTime.exe' -or
+        $_.Path -like '*\ZTime\dist\ZTime.exe' -or
+        $_.Path -like '*\Desktop\ZTime.exe'
     )
 } | Stop-Process -Force -ErrorAction SilentlyContinue
 Start-Sleep -Milliseconds 300
@@ -27,7 +30,7 @@ if ($LASTEXITCODE -ne 0) { throw "RenderIcon failed" }
 Remove-Item "$here\RenderIcon.exe" -ErrorAction SilentlyContinue
 
 $iconArg = @()
-if (Test-Path "$here\clock.ico") { $iconArg = @("/win32icon:$here\clock.ico") }
+if (Test-Path "$here\ztime.ico") { $iconArg = @("/win32icon:$here\ztime.ico") }
 
 & $csc /nologo /optimize+ /codepage:65001 /target:winexe /platform:x64 `
   /win32manifest:"$here\app.manifest" `
@@ -38,23 +41,40 @@ if (Test-Path "$here\clock.ico") { $iconArg = @("/win32icon:$here\clock.ico") }
   /r:"$fw\System.Xaml.dll" `
   /r:Microsoft.CSharp.dll `
   /r:System.Core.dll `
-  /out:"$here\Clock.exe" `
+  /out:"$dist\ZTime.exe" `
   "$here\Program.cs"
-if ($LASTEXITCODE -ne 0) { throw "Clock compile failed" }
+if ($LASTEXITCODE -ne 0) { throw "ZTime compile failed" }
 
-Write-Host "Built $here\Clock.exe"
+Write-Host "Built $dist\ZTime.exe"
 
-$dist = Join-Path $here 'dist'
-New-Item -ItemType Directory -Force -Path $dist | Out-Null
-Copy-Item -Force "$here\Clock.exe" (Join-Path $dist 'Clock.exe')
-if (Test-Path "$here\clock.ico") {
-    Copy-Item -Force "$here\clock.ico" (Join-Path $dist 'clock.ico')
+Get-Process -Name 'Setup' -ErrorAction SilentlyContinue | Where-Object {
+    $_.Path -and (
+        $_.Path -eq (Join-Path $here 'Setup.exe') -or
+        $_.Path -eq (Join-Path $dist 'Setup.exe') -or
+        $_.Path -like '*\Program Files\ZTime\Setup.exe'
+    )
+} | Stop-Process -Force -ErrorAction SilentlyContinue
+
+& $csc /nologo /optimize+ /codepage:65001 /target:winexe /platform:x64 `
+  /win32manifest:"$here\setup.manifest" `
+  @iconArg `
+  /r:"$wpf\WindowsBase.dll" `
+  /r:"$wpf\PresentationCore.dll" `
+  /r:"$wpf\PresentationFramework.dll" `
+  /r:"$fw\System.Xaml.dll" `
+  /r:Microsoft.CSharp.dll `
+  /r:System.Core.dll `
+  /r:System.Windows.Forms.dll `
+  /out:"$dist\Setup.exe" `
+  "$here\Setup.cs"
+if ($LASTEXITCODE -ne 0) { throw "Setup compile failed" }
+
+Write-Host "Built $dist\Setup.exe"
+
+if (Test-Path "$here\ztime.ico") {
+    Copy-Item -Force "$here\ztime.ico" (Join-Path $dist 'ztime.ico')
 }
 
-$desktop = [Environment]::GetFolderPath('Desktop')
-$deskExe = Join-Path $desktop 'Clock.exe'
-Copy-Item -Force "$here\Clock.exe" $deskExe
-Write-Host "Copied $deskExe"
-
-([wmiclass]'Win32_Process').Create($deskExe) | Out-Null
-Write-Host "Launched Clock"
+$distZTime = Join-Path $dist 'ZTime.exe'
+([wmiclass]'Win32_Process').Create($distZTime) | Out-Null
+Write-Host "Launched $distZTime"

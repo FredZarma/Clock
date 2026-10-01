@@ -24,7 +24,7 @@ internal static class RenderIcon
             pngs.Add(png);
         }
 
-        string icoPath = Path.Combine(outDir, "clock.ico");
+        string icoPath = Path.Combine(outDir, "ztime.ico");
         WriteIco(icoPath, pngs);
         Console.WriteLine("Wrote " + icoPath);
         return 0;

@@ -1,0 +1,21 @@
+Product name: ZTime
+Short description: Free desktop clock with a 7-segment LED display.
+Description:
+ZTime is a free digital clock that sits on the desktop like an icon. It shows the PC time on a 7-segment LED display, stays above other windows, and does not appear in the taskbar.
+
+Drag the clock to move it. Double-click to open the calendar. Right-click for the menu: language, alarm, size, color, seconds, date, 24-hour time, opacity, and the name under the icon.
+
+Languages: English, Chinese, Hindi, Spanish, French, Russian, Japanese, and German.
+
+Copyright Fred Zarma 2026. Free, with no ads and no telemetry.
+
+Features:
+7-segment LED clock
+Calendar and daily alarm
+Eight languages
+Size, color, and opacity
+Stays above other windows
+
+Category: Personalization
+Price: Free
+Privacy: the app does not collect or transmit personal information.

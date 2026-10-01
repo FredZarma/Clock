@@ -1,0 +1,3 @@
+Name=FredZarma.ZTime
+Publisher=CN=575CE5BC-9A77-4004-8C89-1537D54E8B6F
+PublisherDisplayName=Fred Zarma
