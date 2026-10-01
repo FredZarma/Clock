@@ -47,17 +47,31 @@ if ($LASTEXITCODE -ne 0) { throw "ZTime compile failed" }
 
 Write-Host "Built $dist\ZTime.exe"
 
-Get-Process -Name 'Setup' -ErrorAction SilentlyContinue | Where-Object {
+if (Test-Path "$here\ztime.ico") {
+    Copy-Item -Force "$here\ztime.ico" (Join-Path $dist 'ztime.ico')
+}
+
+$installerName = 'ZTime Installer.exe'
+$installerPath = Join-Path $dist $installerName
+Get-Process | Where-Object {
     $_.Path -and (
         $_.Path -eq (Join-Path $here 'Setup.exe') -or
         $_.Path -eq (Join-Path $dist 'Setup.exe') -or
-        $_.Path -like '*\Program Files\ZTime\Setup.exe'
+        $_.Path -eq (Join-Path $dist 'ZTime-Setup.exe') -or
+        $_.Path -eq $installerPath -or
+        $_.Path -like '*\Program Files\ZTime\Setup.exe' -or
+        $_.Path -like '*\Program Files\ZTime\ZTime Installer.exe'
     )
 } | Stop-Process -Force -ErrorAction SilentlyContinue
+
+$res = @()
+if (Test-Path "$dist\ZTime.exe") { $res += "/resource:$dist\ZTime.exe,ZTime.exe" }
+if (Test-Path "$dist\ztime.ico") { $res += "/resource:$dist\ztime.ico,ztime.ico" }
 
 & $csc /nologo /optimize+ /codepage:65001 /target:winexe /platform:x64 `
   /win32manifest:"$here\setup.manifest" `
   @iconArg `
+  @res `
   /r:"$wpf\WindowsBase.dll" `
   /r:"$wpf\PresentationCore.dll" `
   /r:"$wpf\PresentationFramework.dll" `
@@ -65,15 +79,15 @@ Get-Process -Name 'Setup' -ErrorAction SilentlyContinue | Where-Object {
   /r:Microsoft.CSharp.dll `
   /r:System.Core.dll `
   /r:System.Windows.Forms.dll `
-  /out:"$dist\Setup.exe" `
+  /out:$installerPath `
   "$here\Setup.cs"
-if ($LASTEXITCODE -ne 0) { throw "Setup compile failed" }
+if ($LASTEXITCODE -ne 0) { throw "Installer compile failed" }
 
-Write-Host "Built $dist\Setup.exe"
-
-if (Test-Path "$here\ztime.ico") {
-    Copy-Item -Force "$here\ztime.ico" (Join-Path $dist 'ztime.ico')
+foreach ($old in @('Setup.exe', 'ZTime-Setup.exe')) {
+    $p = Join-Path $dist $old
+    if (Test-Path $p) { Remove-Item -Force $p }
 }
+Write-Host "Built $installerPath"
 
 $distZTime = Join-Path $dist 'ZTime.exe'
 ([wmiclass]'Win32_Process').Create($distZTime) | Out-Null

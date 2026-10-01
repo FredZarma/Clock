@@ -10,13 +10,13 @@ using System.Windows.Input;
 using System.Windows.Media;
 using Microsoft.Win32;
 
-[assembly: AssemblyTitle("ZTime Setup")]
+[assembly: AssemblyTitle("ZTime Installer")]
 [assembly: AssemblyDescription("ZTime installer")]
 [assembly: AssemblyProduct("ZTime")]
 [assembly: AssemblyCompany("Fred Zarma")]
 [assembly: AssemblyCopyright("Copyright Fred Zarma 2026")]
-[assembly: AssemblyVersion("2.3.1.0")]
-[assembly: AssemblyFileVersion("2.3.1.0")]
+[assembly: AssemblyVersion("2.3.2.0")]
+[assembly: AssemblyFileVersion("2.3.2.0")]
 
 internal static class SetupUi
 {
@@ -42,7 +42,7 @@ internal static class SetupUi
         Add("Also delete saved settings", "同时删除已保存的设置", "सहेजी गई सेटिंग भी हटाएँ", "Eliminar también los ajustes guardados", "Supprimer aussi les réglages enregistrés", "Также удалить сохранённые настройки", "保存した設定も削除する", "Gespeicherte Einstellungen ebenfalls löschen");
         Add("ZTime was uninstalled.", "ZTime 已卸载。", "ZTime अनइंस्टॉल हो गया।", "ZTime se ha desinstalado.", "ZTime a été désinstallé.", "ZTime удалён.", "ZTime をアンインストールしました。", "ZTime wurde deinstalliert.");
         Add("ZTime is not installed.", "尚未安装 ZTime。", "ZTime इंस्टॉल नहीं है।", "ZTime no está instalado.", "ZTime n'est pas installé.", "ZTime не установлен.", "ZTime はインストールされていません。", "ZTime ist nicht installiert.");
-        Add("ZTime.exe was not found next to Setup.exe.", "未在 Setup.exe 旁找到 ZTime.exe。", "Setup.exe के पास ZTime.exe नहीं मिला।", "No se encontró ZTime.exe junto a Setup.exe.", "ZTime.exe est introuvable à côté de Setup.exe.", "ZTime.exe не найден рядом с Setup.exe.", "Setup.exe と同じ場所に ZTime.exe がありません。", "ZTime.exe wurde neben Setup.exe nicht gefunden.");
+        Add("ZTime.exe was not found next to ZTime Installer.exe.", "未在 ZTime Installer.exe 旁找到 ZTime.exe。", "ZTime Installer.exe के पास ZTime.exe नहीं मिला।", "No se encontró ZTime.exe junto a ZTime Installer.exe.", "ZTime.exe est introuvable à côté de ZTime Installer.exe.", "ZTime.exe не найден рядом с ZTime Installer.exe.", "ZTime Installer.exe と同じ場所に ZTime.exe がありません。", "ZTime.exe wurde neben ZTime Installer.exe nicht gefunden.");
         Add("Could not install ZTime.", "无法安装 ZTime。", "ZTime इंस्टॉल नहीं हो सका।", "No se pudo instalar ZTime.", "Impossible d'installer ZTime.", "Не удалось установить ZTime.", "ZTime をインストールできませんでした。", "ZTime konnte nicht installiert werden.");
         Add("Could not uninstall ZTime.", "无法卸载 ZTime。", "ZTime अनइंस्टॉल नहीं हो सका।", "No se pudo desinstalar ZTime.", "Impossible de désinstaller ZTime.", "Не удалось удалить ZTime.", "ZTime をアンインストールできませんでした。", "ZTime konnte nicht deinstalliert werden.");
         Add("Launch ZTime", "启动 ZTime", "ZTime चलाएँ", "Iniciar ZTime", "Lancer ZTime", "Запустить ZTime", "ZTime を起動", "ZTime starten");
@@ -187,9 +187,11 @@ internal static class Paths
         get { return Path.Combine(InstallDir, "ZTime.exe"); }
     }
 
+    public const string InstallerFileName = "ZTime Installer.exe";
+
     public static string SetupExe
     {
-        get { return Path.Combine(InstallDir, "Setup.exe"); }
+        get { return Path.Combine(InstallDir, InstallerFileName); }
     }
 
     public static string DesktopLnk
@@ -509,19 +511,23 @@ internal static class Actions
     {
         error = null;
         string srcDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        string clockSrc = Path.Combine(srcDir, "ZTime.exe");
-        if (!File.Exists(clockSrc))
-        {
-            error = SetupUi.T("ZTime.exe was not found next to Setup.exe.");
-            return false;
-        }
         StopZTime();
         if (!Directory.Exists(dest))
             Directory.CreateDirectory(dest);
 
         string clockDest = Path.Combine(dest, "ZTime.exe");
-        string setupDest = Path.Combine(dest, "Setup.exe");
-        File.Copy(clockSrc, clockDest, true);
+        string setupDest = Path.Combine(dest, Paths.InstallerFileName);
+        string icoDest = Path.Combine(dest, "ztime.ico");
+        if (!WritePacked("ZTime.exe", clockDest))
+        {
+            string clockSrc = Path.Combine(srcDir, "ZTime.exe");
+            if (!File.Exists(clockSrc))
+            {
+                error = SetupUi.T("ZTime.exe was not found next to ZTime Installer.exe.");
+                return false;
+            }
+            File.Copy(clockSrc, clockDest, true);
+        }
         string setupSrc = Assembly.GetExecutingAssembly().Location;
         try
         {
@@ -529,12 +535,20 @@ internal static class Actions
                 File.Copy(setupSrc, setupDest, true);
         }
         catch { }
-
-        string icoSrc = Path.Combine(srcDir, "ztime.ico");
-        if (File.Exists(icoSrc))
+        string leftoverSetup = Path.Combine(dest, "Setup.exe");
+        if (File.Exists(leftoverSetup) && !PathsEqual(leftoverSetup, setupDest))
         {
-            try { File.Copy(icoSrc, Path.Combine(dest, "ztime.ico"), true); }
+            try { File.Delete(leftoverSetup); }
             catch { }
+        }
+        if (!WritePacked("ztime.ico", icoDest))
+        {
+            string icoSrc = Path.Combine(srcDir, "ztime.ico");
+            if (File.Exists(icoSrc))
+            {
+                try { File.Copy(icoSrc, icoDest, true); }
+                catch { }
+            }
         }
 
         if (desktop)
@@ -626,13 +640,13 @@ internal static class Actions
         using (key)
         {
             key.SetValue("DisplayName", "ZTime");
-            key.SetValue("DisplayVersion", "2.3.1");
+            key.SetValue("DisplayVersion", "2.3.2");
             key.SetValue("Publisher", "Fred Zarma");
             key.SetValue("InstallLocation", dest);
             key.SetValue("DisplayIcon", clockDest);
             key.SetValue("UninstallString", "\"" + setupDest + "\" --uninstall");
             key.SetValue("QuietUninstallString", "\"" + setupDest + "\" --uninstall");
-            key.SetValue("HelpLink", "https://fredzarma.itch.io/clock");
+            key.SetValue("HelpLink", "https://fredzarma.itch.io/ztime");
             key.SetValue("URLInfoAbout", "https://github.com/FredZarma/ZTime");
             key.SetValue("NoModify", 1, RegistryValueKind.DWord);
             key.SetValue("NoRepair", 1, RegistryValueKind.DWord);
@@ -680,6 +694,22 @@ internal static class Actions
             catch { }
         }
         Thread.Sleep(300);
+    }
+
+    static bool WritePacked(string resource, string dest)
+    {
+        Stream s = Assembly.GetExecutingAssembly().GetManifestResourceStream(resource);
+        if (s == null)
+            return false;
+        using (s)
+        using (FileStream f = new FileStream(dest, FileMode.Create, FileAccess.Write))
+        {
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = s.Read(buf, 0, buf.Length)) > 0)
+                f.Write(buf, 0, n);
+        }
+        return true;
     }
 
     static void DeleteFile(string path)

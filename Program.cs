@@ -23,8 +23,8 @@ using Microsoft.Win32;
 [assembly: AssemblyProduct("ZTime")]
 [assembly: AssemblyCompany("Fred Zarma")]
 [assembly: AssemblyCopyright("Copyright Fred Zarma 2026")]
-[assembly: AssemblyVersion("2.3.1.0")]
-[assembly: AssemblyFileVersion("2.3.1.0")]
+[assembly: AssemblyVersion("2.3.2.0")]
+[assembly: AssemblyFileVersion("2.3.2.0")]
 
 internal static class Ui
 {
@@ -631,8 +631,8 @@ internal static class Program
         if (clockExe == null || clockExe.Length == 0)
             return null;
         string dir = System.IO.Path.GetDirectoryName(clockExe);
-        string beside = System.IO.Path.Combine(dir, "Setup.exe");
-        if (File.Exists(beside))
+        string beside = FindInstallerIn(dir);
+        if (beside != null)
             return beside;
         try
         {
@@ -643,20 +643,29 @@ internal static class Program
                     object loc = key.GetValue("InstallLocation");
                     if (loc != null)
                     {
-                        string fromReg = System.IO.Path.Combine(loc.ToString().Trim(), "Setup.exe");
-                        if (File.Exists(fromReg))
+                        string fromReg = FindInstallerIn(loc.ToString().Trim());
+                        if (fromReg != null)
                             return fromReg;
                     }
                 }
             }
         }
         catch { }
-        string installed = System.IO.Path.Combine(
+        return FindInstallerIn(System.IO.Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-            "ZTime",
-            "Setup.exe");
-        if (File.Exists(installed))
-            return installed;
+            "ZTime"));
+    }
+
+    static string FindInstallerIn(string dir)
+    {
+        if (dir == null || dir.Length == 0)
+            return null;
+        string named = System.IO.Path.Combine(dir, "ZTime Installer.exe");
+        if (File.Exists(named))
+            return named;
+        string legacy = System.IO.Path.Combine(dir, "Setup.exe");
+        if (File.Exists(legacy))
+            return legacy;
         return null;
     }
 }

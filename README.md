@@ -8,9 +8,11 @@ A small always-on-top gadget you can drag like a desktop icon, with a 7-segment 
 
 ## Download
 
-The latest version is in [Releases](../../releases): the `ZTime.exe` file.
+The latest version is in [Releases](../../releases): download `ZTime Installer.exe` and run it (administrator) to install. You choose the folder, the desktop shortcut, and the Start menu shortcut.
 
-Double-click `ZTime.exe` to run it without installing, or run `Setup.exe` (administrator) to install. You choose the folder, the desktop shortcut, and the Start menu shortcut.
+On [itch.io](https://fredzarma.itch.io/ztime), download the same `ZTime Installer.exe`.
+
+`ZTime.exe` is the portable app: double-click to run without installing.
 
 To uninstall: right-click the clock and choose **Uninstall...**, or use Apps & features.
 
